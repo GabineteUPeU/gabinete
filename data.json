@@ -1,0 +1,329 @@
+{
+  "institucional": {
+    "nombre": "Gabinete Pedagógico",
+    "universidad": "Universidad Peruana Unión",
+    "facultad": "Facultad de Ciencias Humanas y Educación",
+    "color": "#1a3a6b",
+    "logo": "assets/logo-upeu.png"
+  },
+  "semestres": ["2025-2", "2025-1", "2024"],
+  "semestreActivo": "2025-2",
+  "datos": {
+    "2025-2": {
+      "secciones": [
+        {
+          "id": "directivas",
+          "nombre": "Directivas y Lineamientos",
+          "icono": "📋",
+          "color": "blue",
+          "descripcion": "Políticas y normativas institucionales vigentes",
+          "items": [
+            {
+              "titulo": "Lineamientos Académicos 2025-2",
+              "descripcion": "Directivas generales del semestre",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-08-01"
+            },
+            {
+              "titulo": "Reglamento Docente",
+              "descripcion": "Normativa para el personal docente",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-07-15"
+            }
+          ]
+        },
+        {
+          "id": "eventos",
+          "nombre": "Eventos Académicos",
+          "icono": "🎓",
+          "color": "purple",
+          "descripcion": "Jornadas, grupos focales y actividades del semestre",
+          "items": [
+            {
+              "titulo": "Jornada Académica 2025-2",
+              "descripcion": "Encuentro académico de inicio de semestre",
+              "link": "#",
+              "tipo": "evento",
+              "fecha": "2025-08-20"
+            },
+            {
+              "titulo": "Grupos Focales 2025-2",
+              "descripcion": "Sesiones de grupos focales con docentes",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-09-10"
+            },
+            {
+              "titulo": "Encuesta Grupos Focales 2025-2",
+              "descripcion": "Formulario interno de evaluación",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-09-15"
+            }
+          ]
+        },
+        {
+          "id": "monitoreo",
+          "nombre": "Monitoreo y Acompañamiento",
+          "icono": "👁️",
+          "color": "green",
+          "descripcion": "Herramientas de seguimiento y acompañamiento docente",
+          "items": [
+            {
+              "titulo": "Horarios de Clase",
+              "descripcion": "Distribución horaria del semestre 2025-2",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-08-01"
+            },
+            {
+              "titulo": "Directorio Docente",
+              "descripcion": "Contactos del personal docente activo",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-08-01"
+            },
+            {
+              "titulo": "Plano del Campus",
+              "descripcion": "Mapa de aulas y ambientes",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-07-01"
+            },
+            {
+              "titulo": "Ficha de Evidencia de Acompañamiento",
+              "descripcion": "Formulario para registrar acompañamientos realizados",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-08-05"
+            },
+            {
+              "titulo": "Sistema Interno de Monitoreo",
+              "descripcion": "Acceso al sistema digital de monitoreo",
+              "link": "#",
+              "tipo": "sistema",
+              "fecha": "2025-08-01"
+            },
+            {
+              "titulo": "Registro de Docentes Monitoreados",
+              "descripcion": "Consolidado de docentes monitoreados y acompañados",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-09-01"
+            }
+          ]
+        },
+        {
+          "id": "asistencia",
+          "nombre": "Control de Asistencia",
+          "icono": "📅",
+          "color": "orange",
+          "descripcion": "Gestión de faltas, tardanzas y reportes de asistencia",
+          "items": [
+            {
+              "titulo": "Formulario de Faltas y Tardanzas",
+              "descripcion": "Registro de inasistencias y tardanzas docentes",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-08-01"
+            },
+            {
+              "titulo": "Reportes de Asistencia",
+              "descripcion": "Consolidado mensual de asistencia docente",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-09-01"
+            },
+            {
+              "titulo": "Documentos de Coordinadores",
+              "descripcion": "Documentos de entrega para coordinadores de área",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-09-15"
+            }
+          ]
+        },
+        {
+          "id": "reportes",
+          "nombre": "Reportes Generales",
+          "icono": "📊",
+          "color": "red",
+          "descripcion": "Informes consolidados del semestre",
+          "items": [
+            {
+              "titulo": "Reporte de Monitoreo y Acompañamiento",
+              "descripcion": "Informe general del proceso de monitoreo 2025-2",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-11-01"
+            },
+            {
+              "titulo": "Análisis Grupos Focales 2025-2",
+              "descripcion": "Resultados y análisis de los grupos focales",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-10-15"
+            },
+            {
+              "titulo": "Resúmenes de Coordinadores",
+              "descripcion": "Consolidado de reportes por coordinación",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-11-15"
+            }
+          ]
+        },
+        {
+          "id": "recursos",
+          "nombre": "Recursos",
+          "icono": "🗂️",
+          "color": "gray",
+          "descripcion": "Materiales y recursos de apoyo institucional",
+          "items": [
+            {
+              "titulo": "Logos Institucionales",
+              "descripcion": "Archivos de logo UPeU en distintos formatos",
+              "link": "#",
+              "tipo": "recurso",
+              "fecha": "2025-01-01"
+            },
+            {
+              "titulo": "Plantillas de Documentos",
+              "descripcion": "Formatos oficiales para uso del gabinete",
+              "link": "#",
+              "tipo": "recurso",
+              "fecha": "2025-01-01"
+            }
+          ]
+        }
+      ]
+    },
+    "2025-1": {
+      "secciones": [
+        {
+          "id": "directivas",
+          "nombre": "Directivas y Lineamientos",
+          "icono": "📋",
+          "color": "blue",
+          "descripcion": "Políticas y normativas institucionales 2025-1",
+          "items": [
+            {
+              "titulo": "Lineamientos Académicos 2025-1",
+              "descripcion": "Directivas generales del semestre",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-02-01"
+            }
+          ]
+        },
+        {
+          "id": "eventos",
+          "nombre": "Eventos Académicos",
+          "icono": "🎓",
+          "color": "purple",
+          "descripcion": "Jornadas y actividades del semestre 2025-1",
+          "items": [
+            {
+              "titulo": "Jornada Académica 2025-1",
+              "descripcion": "Encuentro académico de inicio de semestre",
+              "link": "#",
+              "tipo": "evento",
+              "fecha": "2025-02-20"
+            },
+            {
+              "titulo": "Grupos Focales 2025-1",
+              "descripcion": "Sesiones de grupos focales",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-03-10"
+            },
+            {
+              "titulo": "Encuesta Interna Grupos Focales 2025-1",
+              "descripcion": "Formulario interno de evaluación",
+              "link": "#",
+              "tipo": "formulario",
+              "fecha": "2025-03-15"
+            }
+          ]
+        },
+        {
+          "id": "monitoreo",
+          "nombre": "Monitoreo y Acompañamiento",
+          "icono": "👁️",
+          "color": "green",
+          "descripcion": "Herramientas de seguimiento docente 2025-1",
+          "items": [
+            {
+              "titulo": "Horarios de Clase 2025-1",
+              "descripcion": "Distribución horaria del semestre",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-02-01"
+            },
+            {
+              "titulo": "Registro de Docentes Monitoreados 2025-1",
+              "descripcion": "Consolidado de docentes monitoreados",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-04-01"
+            }
+          ]
+        },
+        {
+          "id": "reportes",
+          "nombre": "Reportes Generales",
+          "icono": "📊",
+          "color": "red",
+          "descripcion": "Informes consolidados 2025-1",
+          "items": [
+            {
+              "titulo": "Reporte Final Monitoreo 2025-1",
+              "descripcion": "Informe general del proceso de monitoreo",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2025-06-01"
+            }
+          ]
+        }
+      ]
+    },
+    "2024": {
+      "secciones": [
+        {
+          "id": "directivas",
+          "nombre": "Directivas y Lineamientos",
+          "icono": "📋",
+          "color": "blue",
+          "descripcion": "Políticas y normativas institucionales 2024",
+          "items": [
+            {
+              "titulo": "Lineamientos Académicos 2024",
+              "descripcion": "Directivas generales del año 2024",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2024-03-01"
+            }
+          ]
+        },
+        {
+          "id": "reportes",
+          "nombre": "Reportes Generales",
+          "icono": "📊",
+          "color": "red",
+          "descripcion": "Informes consolidados del año 2024",
+          "items": [
+            {
+              "titulo": "Reporte Anual 2024",
+              "descripcion": "Informe general del año académico 2024",
+              "link": "#",
+              "tipo": "documento",
+              "fecha": "2024-12-01"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

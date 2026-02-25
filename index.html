@@ -1,1 +1,340 @@
+<!DOCTYPE html>
+<html lang="es" x-data="app()" :class="{ dark: darkMode }">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gabinete Pedagógico — UPeU</title>
 
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            upeu: { blue: '#1a3a6b', light: '#2451a0', gold: '#c8a94a' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300">
+
+<!-- ===================== MOBILE OVERLAY ===================== -->
+<div id="sidebarOverlay" @click="sidebarOpen = false" :class="{ 'show': sidebarOpen }"></div>
+
+<!-- ===================== LAYOUT WRAPPER ===================== -->
+<div class="flex min-h-screen">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside id="sidebar"
+    :class="{ 'open': sidebarOpen }"
+    class="flex-shrink-0 bg-upeu-blue dark:bg-gray-800 text-white flex flex-col shadow-2xl md:static md:translate-x-0">
+
+    <!-- Logo / Branding -->
+    <div class="header-gradient px-5 py-6 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-xl font-bold text-upeu-gold flex-shrink-0">
+          GP
+        </div>
+        <div>
+          <h1 class="text-sm font-bold leading-tight">Gabinete Pedagógico</h1>
+          <p class="text-xs text-white/60 mt-0.5">UPeU · FCHE</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semestres -->
+    <div class="px-4 pt-5 pb-2">
+      <p class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Semestres</p>
+      <template x-for="sem in data.semestres" :key="sem">
+        <button
+          @click="setSemestre(sem); sidebarOpen = false"
+          :class="semestreActivo === sem ? 'active' : ''"
+          class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 flex items-center gap-2">
+          <span class="text-base">📆</span>
+          <span x-text="sem"></span>
+          <span x-show="semestreActivo === sem"
+            class="ml-auto text-xs bg-white/20 text-upeu-gold px-2 py-0.5 rounded-full">Activo</span>
+        </button>
+      </template>
+    </div>
+
+    <!-- Secciones del semestre activo -->
+    <div class="px-4 pt-4 pb-2 flex-1 overflow-y-auto">
+      <p class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Secciones</p>
+      <template x-for="sec in seccionesActivas()" :key="sec.id">
+        <button
+          @click="scrollToSection(sec.id); sidebarOpen = false"
+          class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 flex items-center gap-2">
+          <span x-text="sec.icono" class="text-base"></span>
+          <span x-text="sec.nombre" class="leading-tight"></span>
+        </button>
+      </template>
+    </div>
+
+    <!-- Footer sidebar -->
+    <div class="px-5 py-4 border-t border-white/10 text-xs text-white/40 text-center">
+      © 2025 UPeU · Gabinete Pedagógico
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN CONTENT ===================== -->
+  <div class="flex-1 flex flex-col min-w-0">
+
+    <!-- ===== TOP HEADER ===== -->
+    <header class="header-gradient text-white px-4 md:px-8 py-4 flex items-center justify-between gap-4 shadow-lg sticky top-0 z-20">
+      <!-- Mobile menu button -->
+      <button @click="sidebarOpen = !sidebarOpen"
+        class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <!-- Title -->
+      <div class="flex-1 min-w-0">
+        <h2 class="text-base font-semibold truncate">
+          Semestre <span class="text-upeu-gold" x-text="semestreActivo"></span>
+        </h2>
+        <p class="text-xs text-white/60 hidden sm:block" x-text="'Universidad Peruana Unión · Facultad de Ciencias Humanas y Educación'"></p>
+      </div>
+
+      <!-- Search -->
+      <div class="relative hidden sm:block">
+        <input
+          id="searchInput"
+          x-model="busqueda"
+          type="text"
+          placeholder="Buscar recurso..."
+          class="w-56 bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-2 pr-9 focus:bg-white/20 transition-colors" />
+        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+      </div>
+
+      <!-- Dark mode toggle -->
+      <button @click="darkMode = !darkMode"
+        class="p-2 rounded-xl hover:bg-white/10 transition-colors flex-shrink-0"
+        :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
+        <span x-text="darkMode ? '☀️' : '🌙'" class="text-lg"></span>
+      </button>
+    </header>
+
+    <!-- ===== MOBILE SEARCH ===== -->
+    <div class="sm:hidden px-4 py-3 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+      <div class="relative">
+        <input
+          x-model="busqueda"
+          type="text"
+          placeholder="Buscar recurso..."
+          class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm rounded-xl px-4 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-upeu-blue/30" />
+        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ===== HERO / STATS ===== -->
+    <div class="px-4 md:px-8 pt-6 pb-2">
+      <!-- Stats cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <template x-for="stat in statsActivos()" :key="stat.label">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+            <div class="text-2xl" x-text="stat.icono"></div>
+            <div>
+              <p class="text-xl font-bold text-upeu-blue dark:text-blue-400" x-text="stat.valor"></p>
+              <p class="text-xs text-gray-500 dark:text-gray-400" x-text="stat.label"></p>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Resultados de búsqueda banner -->
+      <div x-show="busqueda.length > 1" x-transition
+        class="mb-4 bg-upeu-gold/10 border border-upeu-gold/30 text-upeu-blue dark:text-upeu-gold rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+        Mostrando resultados para: <strong x-text="busqueda"></strong>
+        <button @click="busqueda = ''" class="ml-auto text-xs underline">Limpiar</button>
+      </div>
+    </div>
+
+    <!-- ===== SECCIONES ===== -->
+    <main class="px-4 md:px-8 pb-12 flex-1">
+      <template x-for="seccion in seccionesFiltradas()" :key="seccion.id">
+        <section :id="'sec-' + seccion.id" class="mb-10 fade-in-up">
+
+          <!-- Section header -->
+          <div :class="'section-' + seccion.color"
+            class="bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 mb-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+            <div :class="'icon-' + seccion.color" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
+              <span x-text="seccion.icono"></span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-gray-900 dark:text-white" x-text="seccion.nombre"></h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-text="seccion.descripcion"></p>
+            </div>
+            <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-lg flex-shrink-0"
+              x-text="seccion.items.length + ' recursos'"></span>
+          </div>
+
+          <!-- Resources grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <template x-for="item in itemsFiltrados(seccion)" :key="item.titulo">
+              <a :href="item.link" target="_blank" rel="noopener"
+                class="card-resource bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-3 group cursor-pointer">
+
+                <!-- Card top -->
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors leading-tight"
+                      x-text="item.titulo"></h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2"
+                      x-text="item.descripcion"></p>
+                  </div>
+                  <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors flex-shrink-0 mt-0.5"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </div>
+
+                <!-- Card bottom -->
+                <div class="flex items-center justify-between">
+                  <span :class="'badge-' + item.tipo"
+                    class="text-xs px-2.5 py-0.5 rounded-full font-medium capitalize"
+                    x-text="tipoLabel(item.tipo)"></span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500" x-text="formatFecha(item.fecha)"></span>
+                </div>
+              </a>
+            </template>
+
+            <!-- Empty state cuando búsqueda no encuentra nada en esta sección -->
+            <div x-show="itemsFiltrados(seccion).length === 0 && busqueda.length > 1"
+              class="col-span-full text-center py-6 text-gray-400 text-sm">
+              Sin resultados en esta sección para "<span x-text="busqueda"></span>"
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <!-- Empty state global -->
+      <div x-show="seccionesFiltradas().length === 0" class="text-center py-20">
+        <div class="text-5xl mb-4">🔍</div>
+        <p class="text-gray-500 dark:text-gray-400 font-medium">No se encontraron resultados</p>
+        <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otra búsqueda</p>
+        <button @click="busqueda = ''"
+          class="mt-4 px-4 py-2 bg-upeu-blue text-white text-sm rounded-xl hover:bg-upeu-light transition-colors">
+          Ver todos los recursos
+        </button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== ALPINE APP LOGIC ===== -->
+<script>
+function app() {
+  return {
+    data: {},
+    semestreActivo: '2025-2',
+    busqueda: '',
+    darkMode: false,
+    sidebarOpen: false,
+
+    async init() {
+      try {
+        const res = await fetch('data.json');
+        this.data = await res.json();
+        this.semestreActivo = this.data.semestreActivo || this.data.semestres[0];
+      } catch (e) {
+        console.error('Error cargando data.json', e);
+      }
+      // Restaurar preferencia de tema
+      this.darkMode = localStorage.getItem('darkMode') === 'true';
+      this.$watch('darkMode', val => localStorage.setItem('darkMode', val));
+    },
+
+    setSemestre(sem) {
+      this.semestreActivo = sem;
+      this.busqueda = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    seccionesActivas() {
+      return this.data?.datos?.[this.semestreActivo]?.secciones || [];
+    },
+
+    seccionesFiltradas() {
+      const secciones = this.seccionesActivas();
+      if (!this.busqueda || this.busqueda.length < 2) return secciones;
+      return secciones
+        .map(sec => ({
+          ...sec,
+          items: sec.items.filter(item =>
+            item.titulo.toLowerCase().includes(this.busqueda.toLowerCase()) ||
+            item.descripcion.toLowerCase().includes(this.busqueda.toLowerCase())
+          )
+        }))
+        .filter(sec => sec.items.length > 0);
+    },
+
+    itemsFiltrados(seccion) {
+      if (!this.busqueda || this.busqueda.length < 2) return seccion.items;
+      return seccion.items.filter(item =>
+        item.titulo.toLowerCase().includes(this.busqueda.toLowerCase()) ||
+        item.descripcion.toLowerCase().includes(this.busqueda.toLowerCase())
+      );
+    },
+
+    statsActivos() {
+      const secs = this.seccionesActivas();
+      const totalItems = secs.reduce((a, s) => a + s.items.length, 0);
+      const formularios = secs.reduce((a, s) => a + s.items.filter(i => i.tipo === 'formulario').length, 0);
+      const documentos = secs.reduce((a, s) => a + s.items.filter(i => i.tipo === 'documento').length, 0);
+      return [
+        { icono: '📁', valor: secs.length,     label: 'Secciones'   },
+        { icono: '🔗', valor: totalItems,       label: 'Recursos'    },
+        { icono: '📄', valor: documentos,       label: 'Documentos'  },
+        { icono: '📝', valor: formularios,      label: 'Formularios' },
+      ];
+    },
+
+    scrollToSection(id) {
+      const el = document.getElementById('sec-' + id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
+    tipoLabel(tipo) {
+      const labels = {
+        documento: '📄 Documento',
+        formulario: '📝 Formulario',
+        evento: '🎓 Evento',
+        sistema: '💻 Sistema',
+        recurso: '🗂️ Recurso',
+      };
+      return labels[tipo] || tipo;
+    },
+
+    formatFecha(fecha) {
+      if (!fecha) return '';
+      const [y, m, d] = fecha.split('-');
+      const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return `${d} ${meses[parseInt(m)]} ${y}`;
+    }
+  }
+}
+</script>
+</body>
+</html>
