@@ -18,8 +18,9 @@
        console.firebase.google.com → Tu proyecto
        → Configuración ⚙️ → Tus apps → Config
   ================================================= -->
+  <!-- Firebase Realtime Database (más simple y sin problemas de conexión) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script>
     const FIREBASE_CONFIG = {
       apiKey:            "AIzaSyD8K_i48mk24mGLENh-2jlKVNdpwhFHdSw",
@@ -27,16 +28,15 @@
       projectId:         "gabinete-833ab",
       storageBucket:     "gabinete-833ab.firebasestorage.app",
       messagingSenderId: "677147799273",
-      appId:             "1:677147799273:web:77cf925c8d227662e20a78"
+      appId:             "1:677147799273:web:77cf925c8d227662e20a78",
+      databaseURL:       "https://gabinete-833ab-default-rtdb.firebaseio.com"
     };
 
     const _configIncompleta = FIREBASE_CONFIG.apiKey === "TU_API_KEY";
     let _db = null;
     if (!_configIncompleta) {
       firebase.initializeApp(FIREBASE_CONFIG);
-      _db = firebase.firestore();
-      // Forzar long-polling para que funcione desde file:// y GitHub Pages
-      _db.settings({ experimentalForceLongPolling: true, merge: true });
+      _db = firebase.database();
     }
   </script>
   <!-- ================================================ -->
@@ -599,47 +599,40 @@ function app() {
         return;
       }
 
-      // Config completa → intentar Firebase con reintentos
+      // Config completa → conectar Realtime Database
       this.progress = 50;
-      let intentos = 0;
-      const conectar = async () => {
-        try {
-          intentos++;
-          const docRef = _db.collection('gabinete').doc('datos');
-          const snap = await docRef.get();
+      try {
+        const ref = _db.ref('gabinete/datos');
+        const snap = await ref.once('value');
 
-          if (snap.exists()) {
-            this.data = snap.data();
-          } else {
-            await this._cargarJSON();
-            await docRef.set(JSON.parse(JSON.stringify(this.data)));
-            this.showToast('¡Datos subidos a Firebase! ✅', 'success');
-          }
-
-          this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
-          this.firebaseOk = true;
-          this.progress = 100;
-          setTimeout(() => this.progress = 0, 600);
-
-          this._fbUnsub = docRef.onSnapshot(s => {
-            if (!this._guardando && s.exists()) this.data = s.data();
-          });
-
-        } catch(e) {
-          console.error(`Firebase intento ${intentos}:`, e.message);
-          if (intentos < 3) {
-            // Reintenta después de 2 segundos
-            await new Promise(r => setTimeout(r, 2000));
-            return conectar();
-          }
-          // 3 intentos fallidos → modo local
-          this.showToast('Sin conexión a Firebase. Revisa la consola Firebase.', 'error');
-          await this._cargarLocal();
-          this.progress = 100;
-          setTimeout(() => this.progress = 0, 600);
+        if (snap.exists()) {
+          this.data = snap.val();
+        } else {
+          // Primera vez: cargar data.json y subir a Firebase
+          await this._cargarJSON();
+          await ref.set(JSON.parse(JSON.stringify(this.data)));
+          this.showToast('¡Datos subidos a Firebase! ✅', 'success');
         }
-      };
-      await conectar();
+
+        this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
+        this.firebaseOk = true;
+        this.progress = 100;
+        setTimeout(() => this.progress = 0, 600);
+
+        // Escuchar cambios en tiempo real
+        this._fbUnsub = ref.on('value', snap => {
+          if (!this._guardando && snap.exists()) {
+            this.data = snap.val();
+          }
+        });
+
+      } catch(e) {
+        console.error('Firebase error:', e.message);
+        this.showToast('Error Firebase: ' + e.message, 'error');
+        await this._cargarLocal();
+        this.progress = 100;
+        setTimeout(() => this.progress = 0, 600);
+      }
     },
 
     async _cargarJSON() {
@@ -660,13 +653,13 @@ function app() {
       this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
     },
 
-    // Guarda en Firebase si está conectado, sino en localStorage
+    // Guarda en Firebase Realtime Database o localStorage
     async guardar() {
       if (this.firebaseOk && _db) {
         try {
           this._guardando = true;
-          await _db.collection('gabinete').doc('datos').set(JSON.parse(JSON.stringify(this.data)));
-          setTimeout(() => { this._guardando = false; }, 300);
+          await _db.ref('gabinete/datos').set(JSON.parse(JSON.stringify(this.data)));
+          setTimeout(() => { this._guardando = false; }, 500);
         } catch(e) {
           this._guardando = false;
           this.showToast('Error al guardar en Firebase', 'error');
