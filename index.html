@@ -35,6 +35,8 @@
     if (!_configIncompleta) {
       firebase.initializeApp(FIREBASE_CONFIG);
       _db = firebase.firestore();
+      // Forzar long-polling para que funcione desde file:// y GitHub Pages
+      _db.settings({ experimentalForceLongPolling: true, merge: true });
     }
   </script>
   <!-- ================================================ -->
@@ -597,41 +599,47 @@ function app() {
         return;
       }
 
-      // Config completa → intentar Firebase
+      // Config completa → intentar Firebase con reintentos
       this.progress = 50;
-      try {
-        const docRef = _db.collection('gabinete').doc('datos');
-        const snap = await docRef.get();
+      let intentos = 0;
+      const conectar = async () => {
+        try {
+          intentos++;
+          const docRef = _db.collection('gabinete').doc('datos');
+          const snap = await docRef.get();
 
-        if (snap.exists()) {
-          this.data = snap.data();
-        } else {
-          // Primera vez: subir data.json a Firestore
-          await this._cargarJSON();
-          await docRef.set(JSON.parse(JSON.stringify(this.data)));
-          this.showToast('¡Datos subidos a Firebase correctamente! ✅', 'success');
-        }
-
-        this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
-        this.firebaseOk = true;
-        this.progress = 100;
-        setTimeout(() => this.progress = 0, 600);
-
-        // Escuchar cambios en tiempo real
-        this._fbUnsub = docRef.onSnapshot(s => {
-          if (!this._guardando && s.exists()) {
-            this.data = s.data();
+          if (snap.exists()) {
+            this.data = snap.data();
+          } else {
+            await this._cargarJSON();
+            await docRef.set(JSON.parse(JSON.stringify(this.data)));
+            this.showToast('¡Datos subidos a Firebase! ✅', 'success');
           }
-        });
 
-      } catch(e) {
-        console.error('Firebase error:', e);
-        // Si falla → modo local silencioso (sin mostrar pantalla de config)
-        this.showToast('Sin conexión a Firebase. Usando datos locales.', 'info');
-        await this._cargarLocal();
-        this.progress = 100;
-        setTimeout(() => this.progress = 0, 600);
-      }
+          this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
+          this.firebaseOk = true;
+          this.progress = 100;
+          setTimeout(() => this.progress = 0, 600);
+
+          this._fbUnsub = docRef.onSnapshot(s => {
+            if (!this._guardando && s.exists()) this.data = s.data();
+          });
+
+        } catch(e) {
+          console.error(`Firebase intento ${intentos}:`, e.message);
+          if (intentos < 3) {
+            // Reintenta después de 2 segundos
+            await new Promise(r => setTimeout(r, 2000));
+            return conectar();
+          }
+          // 3 intentos fallidos → modo local
+          this.showToast('Sin conexión a Firebase. Revisa la consola Firebase.', 'error');
+          await this._cargarLocal();
+          this.progress = 100;
+          setTimeout(() => this.progress = 0, 600);
+        }
+      };
+      await conectar();
     },
 
     async _cargarJSON() {
