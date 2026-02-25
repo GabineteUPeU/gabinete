@@ -1,337 +1,878 @@
 <!DOCTYPE html>
-<html lang="es" x-data="app()" :class="{ dark: darkMode }">
+<html lang="es" x-data="app()" :class="{ dark: darkMode }" class="h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gabinete Pedagógico — UPeU</title>
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            upeu: { blue: '#1a3a6b', light: '#2451a0', gold: '#c8a94a' }
-          }
-        }
-      }
+      theme: { extend: { colors: { upeu: { blue:'#1a3a6b', light:'#2451a0', gold:'#c8a94a' } } } }
     }
   </script>
 
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- ================================================
+       🔥 FIREBASE — PASO 1: Pega aquí tu configuración
+       Obtén estos datos en:
+       console.firebase.google.com → Tu proyecto
+       → Configuración ⚙️ → Tus apps → Config
+  ================================================= -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script>
+    const FIREBASE_CONFIG = {
+      apiKey:            "AIzaSyBkzcCbnKuRCwAzvgdqD8n98E0jA-2qiYA",
+      authDomain:        "gabinete-upeu.firebaseapp.com",
+      projectId:         "gabinete-upeu",
+      storageBucket:     "gabinete-upeu.firebasestorage.app",
+      messagingSenderId: "340395888343",
+      appId:             "1:340395888343:web:d78b547959422f2e562a92"
+    };
 
-  <!-- Custom styles -->
+    const _configIncompleta = FIREBASE_CONFIG.apiKey === "TU_API_KEY";
+    let _db = null;
+    if (!_configIncompleta) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      _db = firebase.firestore();
+    }
+  </script>
+  <!-- ================================================ -->
+
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300">
+<body class="h-full overflow-hidden bg-slate-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300">
 
-<!-- ===================== MOBILE OVERLAY ===================== -->
-<div id="sidebarOverlay" @click="sidebarOpen = false" :class="{ 'show': sidebarOpen }"></div>
+<!-- PROGRESS BAR -->
+<div class="progress-bar" :style="`width:${progress}%`"></div>
 
-<!-- ===================== LAYOUT WRAPPER ===================== -->
-<div class="flex min-h-screen">
+<!-- PANTALLA: Firebase no configurado -->
+<div x-show="!firebaseOk && !ignorarConfig" x-cloak
+  class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
+  <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 text-center">
+    <div class="text-6xl mb-4">🔥</div>
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Configura Firebase</h2>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed">
+      Para guardar los datos en la nube necesitas conectar Firebase Firestore.
+      Sigue los pasos y luego pega tu configuración en el <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">index.html</code>.
+    </p>
+    <div class="text-left bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 mb-6 space-y-3">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Pasos rápidos</p>
+      <div class="flex gap-3 text-sm">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+        <span class="text-gray-700 dark:text-gray-300">Ir a <strong>console.firebase.google.com</strong> y crear un proyecto nuevo</span>
+      </div>
+      <div class="flex gap-3 text-sm">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+        <span class="text-gray-700 dark:text-gray-300">En el proyecto → <strong>Build → Firestore Database</strong> → Crear base de datos → <em>Modo de prueba</em></span>
+      </div>
+      <div class="flex gap-3 text-sm">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+        <span class="text-gray-700 dark:text-gray-300">Ir a <strong>Configuración ⚙️ → Tus apps → Agregar app web</strong> → Copiar el objeto <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">firebaseConfig</code></span>
+      </div>
+      <div class="flex gap-3 text-sm">
+        <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
+        <span class="text-gray-700 dark:text-gray-300">Pegar los valores en la sección <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">FIREBASE_CONFIG</code> del <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">index.html</code></span>
+      </div>
+    </div>
+    <div class="flex gap-3 justify-center">
+      <button @click="ignorarConfig=true"
+        class="btn-ghost border border-gray-200 dark:border-gray-600 text-sm">
+        Usar sin Firebase (local)
+      </button>
+      <a href="https://console.firebase.google.com" target="_blank"
+        class="btn-primary text-sm flex items-center gap-2">
+        <span>🔥</span> Ir a Firebase Console
+      </a>
+    </div>
+  </div>
+</div>
 
-  <!-- ===================== SIDEBAR ===================== -->
-  <aside id="sidebar"
-    :class="{ 'open': sidebarOpen }"
-    class="flex-shrink-0 bg-upeu-blue dark:bg-gray-800 text-white flex flex-col shadow-2xl md:static md:translate-x-0">
+<!-- TOAST CONTAINER -->
+<div id="toast-container">
+  <template x-for="t in toasts" :key="t.id">
+    <div :class="'toast toast-' + t.tipo" x-text="t.msg"></div>
+  </template>
+</div>
 
-    <!-- Logo / Branding -->
-    <div class="header-gradient px-5 py-6 border-b border-white/10">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-xl font-bold text-upeu-gold flex-shrink-0">
-          GP
+<!-- MOBILE OVERLAY -->
+<div id="sidebarOverlay" @click="sidebarOpen=false" :class="{'show':sidebarOpen}"></div>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- MODAL: Nuevo Ciclo Académico -->
+<div x-show="modal.ciclo" x-cloak class="modal-overlay" @click.self="modal.ciclo=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <span class="text-2xl">📆</span> Nuevo Ciclo Académico
+      </h3>
+      <button @click="modal.ciclo=false" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="form-label">Nombre del ciclo *</label>
+        <input x-model="formCiclo.nombre" @keyup.enter="guardarCiclo()" type="text" placeholder="Ej: 2026-1" class="form-input" maxlength="20" />
+        <p class="text-xs text-gray-400 mt-1">Formato sugerido: YYYY-N (ej: 2026-1, 2026-2)</p>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6 justify-end">
+      <button @click="modal.ciclo=false" class="btn-ghost">Cancelar</button>
+      <button @click="guardarCiclo()" class="btn-primary">Crear Ciclo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nueva Sección / Área -->
+<div x-show="modal.seccion" x-cloak class="modal-overlay" @click.self="modal.seccion=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal-box p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <span class="text-2xl">📁</span> Nueva Sección / Área
+      </h3>
+      <button @click="modal.seccion=false" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="form-label">Nombre del área *</label>
+        <input x-model="formSeccion.nombre" type="text" placeholder="Ej: Monitoreo Docente" class="form-input" />
+      </div>
+      <div>
+        <label class="form-label">Descripción</label>
+        <input x-model="formSeccion.descripcion" type="text" placeholder="Breve descripción del área" class="form-input" />
+      </div>
+      <div>
+        <label class="form-label">Ícono</label>
+        <div class="emoji-grid mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
+          <template x-for="e in emojis" :key="e">
+            <button type="button" @click="formSeccion.icono=e" :class="formSeccion.icono===e?'emoji-btn sel':'emoji-btn'" x-text="e"></button>
+          </template>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Color</label>
+        <div class="color-pick mt-1">
+          <template x-for="c in colores" :key="c">
+            <button type="button" @click="formSeccion.color=c" :class="'color-dot color-dot-'+c+(formSeccion.color===c?' sel':'')"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6 justify-end">
+      <button @click="modal.seccion=false" class="btn-ghost">Cancelar</button>
+      <button @click="guardarSeccion()" class="btn-primary">Crear Sección</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo / Editar Recurso -->
+<div x-show="modal.recurso" x-cloak class="modal-overlay" @click.self="modal.recurso=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal-box p-6 max-w-lg">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <span class="text-2xl" x-text="editingRecurso ? '✏️' : '🔗'"></span>
+        <span x-text="editingRecurso ? 'Editar Recurso' : 'Nuevo Recurso'"></span>
+      </h3>
+      <button @click="modal.recurso=false" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="form-label">Título *</label>
+        <input x-model="formRecurso.titulo" type="text" placeholder="Ej: Horarios de Clase 2026-1" class="form-input" />
+      </div>
+      <div>
+        <label class="form-label">Descripción</label>
+        <input x-model="formRecurso.descripcion" type="text" placeholder="Breve descripción del recurso" class="form-input" />
+      </div>
+      <div>
+        <label class="form-label">URL / Link *</label>
+        <input x-model="formRecurso.link" type="url" placeholder="https://..." class="form-input" />
+        <p class="text-xs text-gray-400 mt-1">Puede ser un link de SharePoint, Google Drive, Formulario, etc.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="form-label">Tipo</label>
+          <select x-model="formRecurso.tipo" class="form-input">
+            <option value="documento">📄 Documento</option>
+            <option value="formulario">📝 Formulario</option>
+            <option value="evento">🎓 Evento</option>
+            <option value="sistema">💻 Sistema</option>
+            <option value="recurso">🗂️ Recurso</option>
+          </select>
         </div>
         <div>
+          <label class="form-label">Fecha</label>
+          <input x-model="formRecurso.fecha" type="date" class="form-input" />
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6 justify-end">
+      <button @click="modal.recurso=false" class="btn-ghost">Cancelar</button>
+      <button @click="guardarRecurso()" class="btn-primary" x-text="editingRecurso ? 'Guardar Cambios' : 'Agregar Recurso'"></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirmar Eliminación -->
+<div x-show="modal.confirmar" x-cloak class="modal-overlay" @click.self="modal.confirmar=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+  <div class="modal-box p-6 max-w-sm text-center">
+    <div class="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2" x-text="'Eliminar ' + (confirmData.tipo || 'elemento')"></h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+      ¿Estás seguro? Esta acción no se puede deshacer.
+      <strong class="block mt-1 text-gray-700 dark:text-gray-300" x-text="confirmData.nombre"></strong>
+    </p>
+    <div class="flex gap-3 justify-center">
+      <button @click="modal.confirmar=false" class="btn-ghost">Cancelar</button>
+      <button @click="confirmData.fn(); modal.confirmar=false" class="btn-danger">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LAYOUT ===================== -->
+<div class="flex h-full overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" :class="{'open':sidebarOpen}"
+    class="w-64 flex-shrink-0 flex flex-col h-full overflow-hidden bg-upeu-blue dark:bg-gray-800 text-white shadow-2xl md:static md:translate-x-0">
+
+    <!-- Branding -->
+    <div class="header-gradient px-5 py-4 flex-shrink-0 border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-upeu-gold text-sm">GP</div>
+        <div>
           <h1 class="text-sm font-bold leading-tight">Gabinete Pedagógico</h1>
-          <p class="text-xs text-white/60 mt-0.5">UPeU · FCHE</p>
+          <p class="text-xs text-white/50 mt-0.5">UPeU · FCHE</p>
         </div>
       </div>
     </div>
 
-    <!-- Semestres -->
-    <div class="px-4 pt-5 pb-2">
-      <p class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Semestres</p>
-      <template x-for="sem in data.semestres" :key="sem">
-        <button
-          @click="setSemestre(sem); sidebarOpen = false"
-          :class="semestreActivo === sem ? 'active' : ''"
-          class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 flex items-center gap-2">
-          <span class="text-base">📆</span>
-          <span x-text="sem"></span>
-          <span x-show="semestreActivo === sem"
-            class="ml-auto text-xs bg-white/20 text-upeu-gold px-2 py-0.5 rounded-full">Activo</span>
-        </button>
-      </template>
-    </div>
+    <!-- Scroll del sidebar -->
+    <div class="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
 
-    <!-- Secciones del semestre activo -->
-    <div class="px-4 pt-4 pb-2 flex-1 overflow-y-auto">
-      <p class="text-xs font-semibold text-white/40 uppercase tracking-widest mb-3">Secciones</p>
-      <template x-for="sec in seccionesActivas()" :key="sec.id">
-        <button
-          @click="scrollToSection(sec.id); sidebarOpen = false"
-          class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 flex items-center gap-2">
-          <span x-text="sec.icono" class="text-base"></span>
-          <span x-text="sec.nombre" class="leading-tight"></span>
-        </button>
-      </template>
-    </div>
-
-    <!-- Footer sidebar -->
-    <div class="px-5 py-4 border-t border-white/10 text-xs text-white/40 text-center">
-      © 2025 UPeU · Gabinete Pedagógico
-    </div>
-  </aside>
-
-  <!-- ===================== MAIN CONTENT ===================== -->
-  <div class="flex-1 flex flex-col min-w-0">
-
-    <!-- ===== TOP HEADER ===== -->
-    <header class="header-gradient text-white px-4 md:px-8 py-4 flex items-center justify-between gap-4 shadow-lg sticky top-0 z-20">
-      <!-- Mobile menu button -->
-      <button @click="sidebarOpen = !sidebarOpen"
-        class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
+      <!-- Inicio -->
+      <button @click="setVista('inicio'); sidebarOpen=false"
+        :class="vistaActiva==='inicio' ? 'nav-item active' : 'nav-item'"
+        class="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5">
+        <span class="text-base w-5 text-center">🏠</span>
+        <span>Inicio</span>
       </button>
 
-      <!-- Title -->
-      <div class="flex-1 min-w-0">
-        <h2 class="text-base font-semibold truncate">
-          Semestre <span class="text-upeu-gold" x-text="semestreActivo"></span>
-        </h2>
-        <p class="text-xs text-white/60 hidden sm:block" x-text="'Universidad Peruana Unión · Facultad de Ciencias Humanas y Educación'"></p>
-      </div>
-
-      <!-- Search -->
-      <div class="relative hidden sm:block">
-        <input
-          id="searchInput"
-          x-model="busqueda"
-          type="text"
-          placeholder="Buscar recurso..."
-          class="w-56 bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-2 pr-9 focus:bg-white/20 transition-colors" />
-        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-        </svg>
-      </div>
-
-      <!-- Dark mode toggle -->
-      <button @click="darkMode = !darkMode"
-        class="p-2 rounded-xl hover:bg-white/10 transition-colors flex-shrink-0"
-        :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
-        <span x-text="darkMode ? '☀️' : '🌙'" class="text-lg"></span>
-      </button>
-    </header>
-
-    <!-- ===== MOBILE SEARCH ===== -->
-    <div class="sm:hidden px-4 py-3 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-      <div class="relative">
-        <input
-          x-model="busqueda"
-          type="text"
-          placeholder="Buscar recurso..."
-          class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-sm rounded-xl px-4 py-2 pr-9 focus:outline-none focus:ring-2 focus:ring-upeu-blue/30" />
-        <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-        </svg>
-      </div>
-    </div>
-
-    <!-- ===== HERO / STATS ===== -->
-    <div class="px-4 md:px-8 pt-6 pb-2">
-      <!-- Stats cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <template x-for="stat in statsActivos()" :key="stat.label">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-            <div class="text-2xl" x-text="stat.icono"></div>
-            <div>
-              <p class="text-xl font-bold text-upeu-blue dark:text-blue-400" x-text="stat.valor"></p>
-              <p class="text-xs text-gray-500 dark:text-gray-400" x-text="stat.label"></p>
-            </div>
+      <!-- SEMESTRES -->
+      <div class="pt-4">
+        <div class="flex items-center justify-between px-3 mb-2">
+          <p class="text-xs font-semibold text-white/35 uppercase tracking-widest">Ciclos</p>
+          <button @click="abrirModalCiclo()" title="Agregar ciclo"
+            class="w-5 h-5 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white/60 hover:text-white text-xs font-bold">+</button>
+        </div>
+        <template x-for="sem in data.semestres" :key="sem">
+          <div class="relative group/sem">
+            <button @click="setSemestre(sem); sidebarOpen=false"
+              :class="semestreActivo===sem ? 'bg-white/10 border-l-2 border-upeu-gold' : ''"
+              class="nav-item w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5">
+              <span class="text-base w-5 text-center">📆</span>
+              <span x-text="sem" class="flex-1"></span>
+              <span x-show="semestreActivo===sem" class="text-xs text-upeu-gold bg-white/10 px-1.5 py-0.5 rounded-md">activo</span>
+            </button>
+            <!-- Eliminar ciclo (solo si no es el activo y no es el único) -->
+            <button x-show="data.semestres.length > 1 && semestreActivo !== sem"
+              @click="confirmarEliminar('Ciclo', sem, () => eliminarCiclo(sem))"
+              class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/sem:opacity-100
+                     w-5 h-5 rounded bg-white/10 hover:bg-red-500/30 flex items-center justify-center
+                     transition-all text-white/50 hover:text-red-300 text-xs">✕</button>
           </div>
         </template>
       </div>
 
-      <!-- Resultados de búsqueda banner -->
-      <div x-show="busqueda.length > 1" x-transition
-        class="mb-4 bg-upeu-gold/10 border border-upeu-gold/30 text-upeu-blue dark:text-upeu-gold rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-        </svg>
-        Mostrando resultados para: <strong x-text="busqueda"></strong>
-        <button @click="busqueda = ''" class="ml-auto text-xs underline">Limpiar</button>
+      <!-- SECCIONES -->
+      <div class="pt-4">
+        <div class="flex items-center justify-between px-3 mb-2">
+          <p class="text-xs font-semibold text-white/35 uppercase tracking-widest">Secciones</p>
+          <button @click="abrirModalSeccion()" title="Agregar sección"
+            class="w-5 h-5 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white/60 hover:text-white text-xs font-bold">+</button>
+        </div>
+        <template x-for="sec in seccionesActivas()" :key="sec.id">
+          <div class="relative group/sec">
+            <button @click="setVista(sec.id); sidebarOpen=false"
+              :class="vistaActiva===sec.id ? 'nav-item active' : 'nav-item'"
+              class="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5 pr-10">
+              <span x-text="sec.icono" class="text-base w-5 text-center"></span>
+              <span x-text="sec.nombre" class="flex-1 text-left leading-tight truncate"></span>
+              <span x-text="sec.items.length" class="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded-md flex-shrink-0"></span>
+            </button>
+            <button @click="confirmarEliminar('Sección', sec.nombre, () => eliminarSeccion(sec.id))"
+              class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/sec:opacity-100
+                     w-5 h-5 rounded bg-white/10 hover:bg-red-500/30 flex items-center justify-center
+                     transition-all text-white/50 hover:text-red-300 text-xs">✕</button>
+          </div>
+        </template>
+        <div x-show="seccionesActivas().length === 0" class="px-3 py-4 text-center text-xs text-white/30">
+          Sin secciones. Presiona + para agregar.
+        </div>
       </div>
     </div>
 
-    <!-- ===== SECCIONES ===== -->
-    <main class="px-4 md:px-8 pb-12 flex-1">
-      <template x-for="seccion in seccionesFiltradas()" :key="seccion.id">
-        <section :id="'sec-' + seccion.id" class="mb-10 fade-in-up">
+    <!-- Footer con estado Firebase + exportar/importar -->
+    <div class="flex-shrink-0 border-t border-white/10 p-3 space-y-1.5">
 
-          <!-- Section header -->
-          <div :class="'section-' + seccion.color"
-            class="bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 mb-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-            <div :class="'icon-' + seccion.color" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
+      <!-- Estado de conexión Firebase -->
+      <div class="flex items-center gap-2 px-3 py-2 rounded-lg mb-1"
+        :class="firebaseOk ? 'bg-emerald-900/30' : 'bg-white/5'">
+        <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+          <span x-show="firebaseOk" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+            :class="firebaseOk ? 'bg-emerald-400' : 'bg-gray-500'"></span>
+        </span>
+        <span class="text-xs"
+          :class="firebaseOk ? 'text-emerald-400' : 'text-white/40'"
+          x-text="firebaseOk ? 'Firebase conectado' : 'Modo local (sin Firebase)'"></span>
+      </div>
+
+      <button @click="exportarJSON()" class="nav-item w-full text-left px-3 py-2 rounded-lg text-xs flex items-center gap-2 text-white/60 hover:text-white">
+        <span>⬇️</span><span>Exportar datos JSON</span>
+      </button>
+      <label class="nav-item w-full text-left px-3 py-2 rounded-lg text-xs flex items-center gap-2 text-white/60 hover:text-white cursor-pointer">
+        <span>⬆️</span><span>Importar datos JSON</span>
+        <input type="file" accept=".json" @change="importarJSON($event)" class="hidden" />
+      </label>
+      <p class="text-center text-xs text-white/20 pt-1">© 2025 UPeU · Gabinete Pedagógico</p>
+    </div>
+  </aside>
+
+  <!-- COLUMNA DERECHA -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- HEADER FIJO -->
+    <header class="flex-shrink-0 header-gradient text-white px-5 py-3 flex items-center gap-4 shadow-lg z-20">
+      <button @click="sidebarOpen=!sidebarOpen" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+
+      <!-- Breadcrumb -->
+      <nav class="flex-1 min-w-0 flex items-center gap-1.5 text-sm">
+        <button @click="setVista('inicio')" class="text-white/50 hover:text-white transition-colors truncate hidden sm:inline">Gabinete</button>
+        <span class="text-white/30 hidden sm:inline">›</span>
+        <span class="text-upeu-gold font-semibold" x-text="semestreActivo"></span>
+        <template x-if="vistaActiva !== 'inicio'">
+          <span class="text-white/30">›</span>
+        </template>
+        <span class="text-white font-medium truncate" x-text="tituloVista()"></span>
+      </nav>
+
+      <!-- Búsqueda -->
+      <div class="relative hidden sm:block">
+        <input x-model="busqueda" type="text" placeholder="Buscar..."
+          class="w-44 bg-white/10 border border-white/20 text-white placeholder-white/40 text-sm rounded-xl px-4 py-1.5 pr-8 focus:bg-white/20 focus:outline-none focus:w-56 transition-all" />
+        <svg class="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+      </div>
+
+      <!-- Dark mode -->
+      <button @click="darkMode=!darkMode" class="p-2 rounded-xl hover:bg-white/10 transition-colors" :title="darkMode?'Modo claro':'Modo oscuro'">
+        <span x-text="darkMode?'☀️':'🌙'" class="text-lg leading-none"></span>
+      </button>
+    </header>
+
+    <!-- MAIN SCROLLABLE -->
+    <main class="flex-1 overflow-y-auto">
+
+      <!-- ===== VISTA INICIO ===== -->
+      <div x-show="vistaActiva==='inicio'" class="p-5 md:p-7 page-enter">
+
+        <!-- Banner -->
+        <div class="header-gradient rounded-2xl p-6 md:p-8 mb-6 text-white relative overflow-hidden">
+          <div class="absolute -top-10 -right-10 w-52 h-52 bg-white/5 rounded-full"></div>
+          <div class="absolute -bottom-8 -left-8 w-36 h-36 bg-white/5 rounded-full"></div>
+          <div class="relative">
+            <p class="text-upeu-gold text-xs font-semibold uppercase tracking-widest mb-2">Universidad Peruana Unión</p>
+            <h2 class="text-2xl md:text-3xl font-bold mb-1">Gabinete Pedagógico</h2>
+            <p class="text-white/70 text-sm">Facultad de Ciencias Humanas y Educación · Ciclo
+              <span class="text-upeu-gold font-bold" x-text="semestreActivo"></span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-7">
+          <template x-for="stat in statsActivos()" :key="stat.label">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3 card-resource">
+              <div class="text-2xl" x-text="stat.icono"></div>
+              <div>
+                <p class="text-2xl font-bold text-upeu-blue dark:text-blue-400 stat-number" x-text="stat.valor"></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400" x-text="stat.label"></p>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Acceso rápido -->
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Secciones del ciclo</h3>
+          <button @click="abrirModalSeccion()"
+            class="flex items-center gap-1.5 text-xs font-semibold text-upeu-blue dark:text-blue-400 hover:underline">
+            <span class="text-base">+</span> Nueva sección
+          </button>
+        </div>
+
+        <div x-show="seccionesActivas().length === 0" class="empty-state">
+          <div class="text-5xl mb-4">📂</div>
+          <p class="font-semibold text-gray-600 dark:text-gray-400">Sin secciones en este ciclo</p>
+          <p class="text-sm text-gray-400 mt-1 mb-4">Agrega una sección para comenzar a organizar recursos</p>
+          <button @click="abrirModalSeccion()" class="btn-primary">Agregar primera sección</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <template x-for="sec in seccionesActivas()" :key="sec.id">
+            <button @click="setVista(sec.id)" :class="'section-'+sec.color"
+              class="card-resource ripple-container text-left bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex items-start gap-4 w-full group">
+              <div :class="'icon-'+sec.color" class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                <span x-text="sec.icono"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-gray-900 dark:text-white group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors text-sm" x-text="sec.nombre"></h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed line-clamp-2" x-text="sec.descripcion || 'Sin descripción'"></p>
+                <span class="inline-block mt-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg" x-text="sec.items.length + ' recursos'"></span>
+              </div>
+              <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-all group-hover:translate-x-0.5 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- ===== VISTAS DE SECCIÓN ===== -->
+      <template x-for="seccion in seccionesActivas()" :key="seccion.id">
+        <div x-show="vistaActiva===seccion.id" class="p-5 md:p-7 page-enter">
+
+          <!-- Header sección -->
+          <div :class="'section-'+seccion.color"
+            class="bg-white dark:bg-gray-800 rounded-2xl px-5 md:px-6 py-5 mb-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-4">
+            <div :class="'icon-'+seccion.color" class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0">
               <span x-text="seccion.icono"></span>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-bold text-gray-900 dark:text-white" x-text="seccion.nombre"></h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" x-text="seccion.descripcion"></p>
+              <h2 class="text-lg font-bold text-gray-900 dark:text-white" x-text="seccion.nombre"></h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5" x-text="seccion.descripcion || 'Sin descripción'"></p>
             </div>
-            <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-1 rounded-lg flex-shrink-0"
-              x-text="seccion.items.length + ' recursos'"></span>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <span class="text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-xl font-medium" x-text="seccion.items.length + ' recursos'"></span>
+              <button @click="abrirModalRecurso(seccion.id)"
+                class="flex items-center gap-1.5 btn-primary text-xs px-3 py-1.5">
+                <span class="text-sm font-bold">+</span> Agregar
+              </button>
+            </div>
           </div>
 
-          <!-- Resources grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <template x-for="item in itemsFiltrados(seccion)" :key="item.titulo">
-              <a :href="item.link" target="_blank" rel="noopener"
-                class="card-resource bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col gap-3 group cursor-pointer">
+          <!-- Búsqueda mobile -->
+          <div class="sm:hidden mb-4 relative">
+            <input x-model="busqueda" type="text" placeholder="Buscar recurso..."
+              class="form-input pr-9" />
+            <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+          </div>
 
-                <!-- Card top -->
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex-1 min-w-0">
-                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors leading-tight"
-                      x-text="item.titulo"></h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2"
-                      x-text="item.descripcion"></p>
+          <!-- Banner búsqueda activa -->
+          <div x-show="busqueda.length > 1" x-transition
+            class="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+            Filtrando por: <strong x-text="busqueda"></strong>
+            <button @click="busqueda=''" class="ml-auto text-xs underline">Limpiar</button>
+          </div>
+
+          <!-- Grid recursos -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="(item, idx) in itemsFiltrados(seccion)" :key="item.titulo + idx">
+              <div class="card-resource bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden group">
+
+                <!-- Barra de color superior -->
+                <div :class="'h-1 bg-gradient-to-r ' + colorGradient(seccion.color)"></div>
+
+                <div class="p-5 flex flex-col gap-3 flex-1">
+                  <!-- Badge + fecha -->
+                  <div class="flex items-center justify-between gap-2">
+                    <span :class="'badge-'+item.tipo" class="text-xs px-2.5 py-1 rounded-lg font-medium flex-shrink-0" x-text="tipoLabel(item.tipo)"></span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 truncate" x-text="formatFecha(item.fecha)"></span>
                   </div>
-                  <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors flex-shrink-0 mt-0.5"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                  </svg>
-                </div>
 
-                <!-- Card bottom -->
-                <div class="flex items-center justify-between">
-                  <span :class="'badge-' + item.tipo"
-                    class="text-xs px-2.5 py-0.5 rounded-full font-medium capitalize"
-                    x-text="tipoLabel(item.tipo)"></span>
-                  <span class="text-xs text-gray-400 dark:text-gray-500" x-text="formatFecha(item.fecha)"></span>
+                  <!-- Título + descripción -->
+                  <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white leading-snug" x-text="item.titulo"></h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed line-clamp-3" x-text="item.descripcion || ''"></p>
+                  </div>
+
+                  <!-- Footer de la card -->
+                  <div class="flex items-center justify-between pt-2 border-t border-gray-50 dark:border-gray-700 gap-2">
+                    <!-- CTA -->
+                    <a :href="item.link" target="_blank" rel="noopener"
+                      :class="item.link && item.link !== '#' ? 'text-upeu-blue dark:text-blue-400 hover:underline' : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'"
+                      class="flex items-center gap-1.5 text-xs font-semibold transition-all">
+                      <span x-text="item.link && item.link !== '#' ? 'Abrir recurso' : 'Sin link'"></span>
+                      <svg x-show="item.link && item.link !== '#'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </a>
+                    <!-- Admin actions -->
+                    <div class="admin-actions flex items-center gap-1">
+                      <button @click.prevent="abrirEditarRecurso(seccion.id, item)"
+                        title="Editar"
+                        class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </button>
+                      <button @click.prevent="confirmarEliminar('Recurso', item.titulo, () => eliminarRecurso(seccion.id, item.titulo))"
+                        title="Eliminar"
+                        class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/40 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </a>
+              </div>
             </template>
 
-            <!-- Empty state cuando búsqueda no encuentra nada en esta sección -->
-            <div x-show="itemsFiltrados(seccion).length === 0 && busqueda.length > 1"
-              class="col-span-full text-center py-6 text-gray-400 text-sm">
-              Sin resultados en esta sección para "<span x-text="busqueda"></span>"
+            <!-- Empty state -->
+            <div x-show="itemsFiltrados(seccion).length === 0" class="col-span-full empty-state">
+              <div class="text-5xl mb-3" x-text="busqueda.length > 1 ? '🔍' : '📭'"></div>
+              <p class="font-semibold text-gray-600 dark:text-gray-400"
+                x-text="busqueda.length > 1 ? 'Sin resultados para «' + busqueda + '»' : 'Sin recursos aún'"></p>
+              <p class="text-sm text-gray-400 mt-1 mb-4"
+                x-text="busqueda.length > 1 ? 'Prueba con otra búsqueda' : 'Agrega el primer recurso a esta sección'"></p>
+              <div class="flex gap-3">
+                <button x-show="busqueda.length > 1" @click="busqueda=''" class="btn-ghost border border-gray-200 dark:border-gray-700">Ver todos</button>
+                <button x-show="busqueda.length <= 1" @click="abrirModalRecurso(seccion.id)" class="btn-primary">Agregar recurso</button>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
       </template>
 
-      <!-- Empty state global -->
-      <div x-show="seccionesFiltradas().length === 0" class="text-center py-20">
-        <div class="text-5xl mb-4">🔍</div>
-        <p class="text-gray-500 dark:text-gray-400 font-medium">No se encontraron resultados</p>
-        <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otra búsqueda</p>
-        <button @click="busqueda = ''"
-          class="mt-4 px-4 py-2 bg-upeu-blue text-white text-sm rounded-xl hover:bg-upeu-light transition-colors">
-          Ver todos los recursos
-        </button>
-      </div>
     </main>
   </div>
 </div>
 
-<!-- ===== ALPINE APP LOGIC ===== -->
+<!-- ===== ALPINE APP ===== -->
 <script>
 function app() {
   return {
+    // ─── Estado general ───────────────────────────────────
     data: {},
     semestreActivo: '2025-2',
+    vistaActiva: 'inicio',
     busqueda: '',
     darkMode: false,
     sidebarOpen: false,
+    progress: 0,
+    toasts: [],
+    firebaseOk: false,
+    ignorarConfig: false,
+    _fbUnsub: null,          // listener tiempo real
+    _guardando: false,       // evita loops de onSnapshot
 
+    // ─── Modales ──────────────────────────────────────────
+    modal: { ciclo:false, seccion:false, recurso:false, confirmar:false },
+    confirmData: { tipo:'', nombre:'', fn: ()=>{} },
+    editingRecurso: null,
+    editingSeccionId: null,
+    formCiclo:   { nombre:'' },
+    formSeccion: { nombre:'', icono:'📁', color:'blue', descripcion:'' },
+    formRecurso: { titulo:'', descripcion:'', link:'', tipo:'documento', fecha:'' },
+    emojis: ['📋','📄','📁','🗂️','📊','📈','📝','🎓','👁️','📅','🏆','🔗','💻','🎯','⚙️','🔔','📌','✅','📢','🗺️','🏫','👥','📞','🔍','💡','🌐','📸','🎬'],
+    colores: ['blue','purple','green','orange','red','gray'],
+
+    // ─── INIT ─────────────────────────────────────────────
     async init() {
+      this.progress = 20;
+      this.darkMode = localStorage.getItem('darkMode') === 'true';
+      this.$watch('darkMode', v => localStorage.setItem('darkMode', v));
+      document.addEventListener('click', this.addRipple);
+
+      if (_configIncompleta) {
+        // Sin Firebase: cargar local
+        await this._cargarLocal();
+        this.progress = 100;
+        setTimeout(() => this.progress = 0, 600);
+        return;
+      }
+
+      // Con Firebase: suscripción en tiempo real
+      this.progress = 50;
+      try {
+        const docRef = _db.collection('gabinete').doc('datos');
+        const snap = await docRef.get();
+
+        if (snap.exists()) {
+          this.data = snap.data();
+        } else {
+          // Primera vez: subir data.json a Firestore
+          await this._cargarJSON();
+          await docRef.set(JSON.parse(JSON.stringify(this.data)));
+          this.showToast('Datos iniciales guardados en Firebase ✅', 'success');
+        }
+
+        this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
+        this.firebaseOk = true;
+        this.progress = 100;
+        setTimeout(() => this.progress = 0, 600);
+
+        // Escuchar cambios en tiempo real (colaboración)
+        this._fbUnsub = docRef.onSnapshot(s => {
+          if (!this._guardando && s.exists()) {
+            this.data = s.data();
+          }
+        });
+
+      } catch(e) {
+        console.error('Firebase error:', e);
+        this.showToast('Error conectando Firebase. Modo local activado.', 'error');
+        await this._cargarLocal();
+        this.progress = 100;
+        setTimeout(() => this.progress = 0, 600);
+      }
+    },
+
+    async _cargarJSON() {
       try {
         const res = await fetch('data.json');
         this.data = await res.json();
-        this.semestreActivo = this.data.semestreActivo || this.data.semestres[0];
-      } catch (e) {
-        console.error('Error cargando data.json', e);
+      } catch {
+        this.data = { semestres:['2025-2'], semestreActivo:'2025-2', datos:{ '2025-2':{ secciones:[] } } };
       }
-      // Restaurar preferencia de tema
-      this.darkMode = localStorage.getItem('darkMode') === 'true';
-      this.$watch('darkMode', val => localStorage.setItem('darkMode', val));
     },
 
+    async _cargarLocal() {
+      const stored = localStorage.getItem('gabinete_data');
+      if (stored) {
+        try { this.data = JSON.parse(stored); return; } catch {}
+      }
+      await this._cargarJSON();
+      this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
+    },
+
+    // Guarda en Firebase si está conectado, sino en localStorage
+    async guardar() {
+      if (this.firebaseOk && _db) {
+        try {
+          this._guardando = true;
+          await _db.collection('gabinete').doc('datos').set(JSON.parse(JSON.stringify(this.data)));
+          setTimeout(() => { this._guardando = false; }, 300);
+        } catch(e) {
+          this._guardando = false;
+          this.showToast('Error al guardar en Firebase', 'error');
+          localStorage.setItem('gabinete_data', JSON.stringify(this.data));
+        }
+      } else {
+        localStorage.setItem('gabinete_data', JSON.stringify(this.data));
+      }
+    },
+
+    // ─── CICLOS ───────────────────────────────────────────
+    abrirModalCiclo() {
+      this.formCiclo = { nombre:'' };
+      this.modal.ciclo = true;
+      this.$nextTick(() => document.querySelector('[x-model="formCiclo.nombre"]')?.focus());
+    },
+
+    async guardarCiclo() {
+      const nombre = this.formCiclo.nombre.trim();
+      if (!nombre) { this.showToast('El nombre del ciclo es requerido', 'error'); return; }
+      if (this.data.semestres.includes(nombre)) { this.showToast('Ese ciclo ya existe', 'error'); return; }
+      this.data.semestres.unshift(nombre);
+      if (!this.data.datos) this.data.datos = {};
+      this.data.datos[nombre] = { secciones:[] };
+      this.modal.ciclo = false;
+      await this.guardar();
+      this.setSemestre(nombre);
+      this.showToast(`Ciclo ${nombre} creado`, 'success');
+    },
+
+    async eliminarCiclo(nombre) {
+      this.data.semestres = this.data.semestres.filter(s => s !== nombre);
+      delete this.data.datos[nombre];
+      if (this.semestreActivo === nombre) {
+        this.semestreActivo = this.data.semestres[0];
+        this.vistaActiva = 'inicio';
+      }
+      await this.guardar();
+      this.showToast(`Ciclo ${nombre} eliminado`, 'info');
+    },
+
+    // ─── SECCIONES ────────────────────────────────────────
+    abrirModalSeccion() {
+      this.formSeccion = { nombre:'', icono:'📁', color:'blue', descripcion:'' };
+      this.modal.seccion = true;
+    },
+
+    async guardarSeccion() {
+      const nombre = this.formSeccion.nombre.trim();
+      if (!nombre) { this.showToast('El nombre es requerido', 'error'); return; }
+      const secciones = this.data.datos[this.semestreActivo].secciones;
+      const id = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      if (secciones.find(s => s.id === id)) { this.showToast('Ya existe esa sección', 'error'); return; }
+      secciones.push({ id, nombre, icono:this.formSeccion.icono, color:this.formSeccion.color, descripcion:this.formSeccion.descripcion, items:[] });
+      this.modal.seccion = false;
+      await this.guardar();
+      this.showToast(`Sección "${nombre}" creada`, 'success');
+      this.$nextTick(() => this.setVista(id));
+    },
+
+    async eliminarSeccion(id) {
+      const secs = this.data.datos[this.semestreActivo].secciones;
+      this.data.datos[this.semestreActivo].secciones = secs.filter(s => s.id !== id);
+      if (this.vistaActiva === id) this.vistaActiva = 'inicio';
+      await this.guardar();
+      this.showToast('Sección eliminada', 'info');
+    },
+
+    // ─── RECURSOS ─────────────────────────────────────────
+    abrirModalRecurso(seccionId) {
+      this.editingRecurso = null;
+      this.editingSeccionId = seccionId;
+      this.formRecurso = { titulo:'', descripcion:'', link:'', tipo:'documento', fecha: new Date().toISOString().split('T')[0] };
+      this.modal.recurso = true;
+      this.$nextTick(() => document.querySelector('[x-model="formRecurso.titulo"]')?.focus());
+    },
+
+    abrirEditarRecurso(seccionId, item) {
+      this.editingRecurso = item.titulo;
+      this.editingSeccionId = seccionId;
+      this.formRecurso = { ...item };
+      this.modal.recurso = true;
+    },
+
+    async guardarRecurso() {
+      const titulo = this.formRecurso.titulo.trim();
+      const link   = this.formRecurso.link.trim();
+      if (!titulo) { this.showToast('El título es requerido', 'error'); return; }
+      if (!link)   { this.showToast('El link/URL es requerido', 'error'); return; }
+      const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === this.editingSeccionId);
+      if (!sec) return;
+      if (this.editingRecurso) {
+        const idx = sec.items.findIndex(i => i.titulo === this.editingRecurso);
+        if (idx !== -1) sec.items[idx] = { ...this.formRecurso, titulo };
+        this.showToast('Recurso actualizado', 'success');
+      } else {
+        sec.items.push({ titulo, descripcion:this.formRecurso.descripcion, link, tipo:this.formRecurso.tipo, fecha:this.formRecurso.fecha });
+        this.showToast(`"${titulo}" agregado`, 'success');
+      }
+      this.modal.recurso = false;
+      await this.guardar();
+    },
+
+    async eliminarRecurso(seccionId, titulo) {
+      const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === seccionId);
+      if (sec) sec.items = sec.items.filter(i => i.titulo !== titulo);
+      await this.guardar();
+      this.showToast('Recurso eliminado', 'info');
+    },
+
+    // ─── CONFIRMAR ────────────────────────────────────────
+    confirmarEliminar(tipo, nombre, fn) {
+      this.confirmData = { tipo, nombre, fn };
+      this.modal.confirmar = true;
+    },
+
+    // ─── EXPORT / IMPORT ──────────────────────────────────
+    exportarJSON() {
+      const blob = new Blob([JSON.stringify(this.data, null, 2)], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'data.json';
+      a.click();
+      this.showToast('data.json descargado', 'success');
+    },
+
+    importarJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          this.data = JSON.parse(e.target.result);
+          this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0];
+          this.vistaActiva = 'inicio';
+          await this.guardar();
+          this.showToast('Datos importados y guardados en Firebase', 'success');
+        } catch { this.showToast('Archivo JSON inválido', 'error'); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    },
+
+    // ─── HELPERS ──────────────────────────────────────────
     setSemestre(sem) {
       this.semestreActivo = sem;
+      this.data.semestreActivo = sem;
+      this.vistaActiva = 'inicio';
       this.busqueda = '';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    setVista(id) {
+      this.vistaActiva = id;
+      this.busqueda = '';
     },
 
     seccionesActivas() {
       return this.data?.datos?.[this.semestreActivo]?.secciones || [];
     },
 
-    seccionesFiltradas() {
-      const secciones = this.seccionesActivas();
-      if (!this.busqueda || this.busqueda.length < 2) return secciones;
-      return secciones
-        .map(sec => ({
-          ...sec,
-          items: sec.items.filter(item =>
-            item.titulo.toLowerCase().includes(this.busqueda.toLowerCase()) ||
-            item.descripcion.toLowerCase().includes(this.busqueda.toLowerCase())
-          )
-        }))
-        .filter(sec => sec.items.length > 0);
+    tituloVista() {
+      if (this.vistaActiva === 'inicio') return 'Inicio';
+      return this.seccionesActivas().find(s => s.id === this.vistaActiva)?.nombre || '';
     },
 
     itemsFiltrados(seccion) {
       if (!this.busqueda || this.busqueda.length < 2) return seccion.items;
-      return seccion.items.filter(item =>
-        item.titulo.toLowerCase().includes(this.busqueda.toLowerCase()) ||
-        item.descripcion.toLowerCase().includes(this.busqueda.toLowerCase())
+      const q = this.busqueda.toLowerCase();
+      return seccion.items.filter(i =>
+        i.titulo.toLowerCase().includes(q) || (i.descripcion||'').toLowerCase().includes(q)
       );
     },
 
     statsActivos() {
-      const secs = this.seccionesActivas();
-      const totalItems = secs.reduce((a, s) => a + s.items.length, 0);
-      const formularios = secs.reduce((a, s) => a + s.items.filter(i => i.tipo === 'formulario').length, 0);
-      const documentos = secs.reduce((a, s) => a + s.items.filter(i => i.tipo === 'documento').length, 0);
+      const secs  = this.seccionesActivas();
+      const total = secs.reduce((a, s) => a + s.items.length, 0);
+      const docs  = secs.reduce((a, s) => a + s.items.filter(i => i.tipo==='documento').length, 0);
+      const forms = secs.reduce((a, s) => a + s.items.filter(i => i.tipo==='formulario').length, 0);
       return [
-        { icono: '📁', valor: secs.length,     label: 'Secciones'   },
-        { icono: '🔗', valor: totalItems,       label: 'Recursos'    },
-        { icono: '📄', valor: documentos,       label: 'Documentos'  },
-        { icono: '📝', valor: formularios,      label: 'Formularios' },
+        { icono:'📁', valor:secs.length, label:'Secciones'   },
+        { icono:'🔗', valor:total,        label:'Recursos'    },
+        { icono:'📄', valor:docs,         label:'Documentos'  },
+        { icono:'📝', valor:forms,        label:'Formularios' },
       ];
     },
 
-    scrollToSection(id) {
-      const el = document.getElementById('sec-' + id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    },
-
     tipoLabel(tipo) {
-      const labels = {
-        documento: '📄 Documento',
-        formulario: '📝 Formulario',
-        evento: '🎓 Evento',
-        sistema: '💻 Sistema',
-        recurso: '🗂️ Recurso',
-      };
-      return labels[tipo] || tipo;
+      return { documento:'📄 Documento', formulario:'📝 Formulario', evento:'🎓 Evento', sistema:'💻 Sistema', recurso:'🗂️ Recurso' }[tipo] || tipo;
     },
 
     formatFecha(fecha) {
       if (!fecha) return '';
-      const [y, m, d] = fecha.split('-');
-      const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      return `${d} ${meses[parseInt(m)]} ${y}`;
+      const [y,m,d] = fecha.split('-');
+      return `${d} ${['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+m]} ${y}`;
+    },
+
+    colorGradient(color) {
+      return { blue:'from-blue-400 to-blue-600', purple:'from-purple-400 to-purple-600', green:'from-emerald-400 to-emerald-600', orange:'from-amber-400 to-amber-600', red:'from-red-400 to-red-600', gray:'from-slate-400 to-slate-600' }[color] || 'from-gray-400 to-gray-600';
+    },
+
+    showToast(msg, tipo='info') {
+      const id = Date.now();
+      this.toasts.push({ id, msg, tipo });
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3200);
+    },
+
+    addRipple(e) {
+      const el = e.target.closest('.ripple-container');
+      if (!el) return;
+      const r = document.createElement('span');
+      const rect = el.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.5;
+      r.className = 'ripple';
+      r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      el.appendChild(r);
+      setTimeout(() => r.remove(), 600);
     }
   }
 }
