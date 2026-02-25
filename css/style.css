@@ -1,3 +1,6 @@
+/* Ocultar elementos Alpine hasta que inicialice */
+[x-cloak] { display: none !important; }
+
 /* ===== VARIABLES ===== */
 :root {
   --upeu-blue:  #1a3a6b;

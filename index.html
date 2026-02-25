@@ -22,12 +22,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script>
     const FIREBASE_CONFIG = {
-      apiKey:            "AIzaSyBkzcCbnKuRCwAzvgdqD8n98E0jA-2qiYA",
-      authDomain:        "gabinete-upeu.firebaseapp.com",
-      projectId:         "gabinete-upeu",
-      storageBucket:     "gabinete-upeu.firebasestorage.app",
-      messagingSenderId: "340395888343",
-      appId:             "1:340395888343:web:d78b547959422f2e562a92"
+      apiKey:            "AIzaSyD8K_i48mk24mGLENh-2jlKVNdpwhFHdSw",
+      authDomain:        "gabinete-833ab.firebaseapp.com",
+      projectId:         "gabinete-833ab",
+      storageBucket:     "gabinete-833ab.firebasestorage.app",
+      messagingSenderId: "677147799273",
+      appId:             "1:677147799273:web:77cf925c8d227662e20a78"
     };
 
     const _configIncompleta = FIREBASE_CONFIG.apiKey === "TU_API_KEY";
@@ -48,8 +48,8 @@
 <!-- PROGRESS BAR -->
 <div class="progress-bar" :style="`width:${progress}%`"></div>
 
-<!-- PANTALLA: Firebase no configurado -->
-<div x-show="!firebaseOk && !ignorarConfig" x-cloak
+<!-- PANTALLA: Firebase no configurado — solo aparece si el config tiene valores vacíos -->
+<div x-show="configSinLlenar" x-cloak
   class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
   <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 text-center">
     <div class="text-6xl mb-4">🔥</div>
@@ -566,7 +566,7 @@ function app() {
     progress: 0,
     toasts: [],
     firebaseOk: false,
-    ignorarConfig: false,
+    configSinLlenar: false,  // true solo si el config tiene valores placeholder
     _fbUnsub: null,          // listener tiempo real
     _guardando: false,       // evita loops de onSnapshot
 
@@ -588,15 +588,16 @@ function app() {
       this.$watch('darkMode', v => localStorage.setItem('darkMode', v));
       document.addEventListener('click', this.addRipple);
 
+      // Detectar si el config es placeholder
       if (_configIncompleta) {
-        // Sin Firebase: cargar local
+        this.configSinLlenar = true;
         await this._cargarLocal();
         this.progress = 100;
         setTimeout(() => this.progress = 0, 600);
         return;
       }
 
-      // Con Firebase: suscripción en tiempo real
+      // Config completa → intentar Firebase
       this.progress = 50;
       try {
         const docRef = _db.collection('gabinete').doc('datos');
@@ -608,7 +609,7 @@ function app() {
           // Primera vez: subir data.json a Firestore
           await this._cargarJSON();
           await docRef.set(JSON.parse(JSON.stringify(this.data)));
-          this.showToast('Datos iniciales guardados en Firebase ✅', 'success');
+          this.showToast('¡Datos subidos a Firebase correctamente! ✅', 'success');
         }
 
         this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
@@ -616,7 +617,7 @@ function app() {
         this.progress = 100;
         setTimeout(() => this.progress = 0, 600);
 
-        // Escuchar cambios en tiempo real (colaboración)
+        // Escuchar cambios en tiempo real
         this._fbUnsub = docRef.onSnapshot(s => {
           if (!this._guardando && s.exists()) {
             this.data = s.data();
@@ -625,7 +626,8 @@ function app() {
 
       } catch(e) {
         console.error('Firebase error:', e);
-        this.showToast('Error conectando Firebase. Modo local activado.', 'error');
+        // Si falla → modo local silencioso (sin mostrar pantalla de config)
+        this.showToast('Sin conexión a Firebase. Usando datos locales.', 'info');
         await this._cargarLocal();
         this.progress = 100;
         setTimeout(() => this.progress = 0, 600);
