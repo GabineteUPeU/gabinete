@@ -308,7 +308,7 @@
               class="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5 pr-10">
               <span x-text="sec.icono" class="text-base w-5 text-center"></span>
               <span x-text="sec.nombre" class="flex-1 text-left leading-tight truncate"></span>
-              <span x-text="sec.items.length" class="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded-md flex-shrink-0"></span>
+              <span x-text="(sec.items || []).length" class="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded-md flex-shrink-0"></span>
             </button>
             <button @click="confirmarEliminar('Sección', sec.nombre, () => eliminarSeccion(sec.id))"
               class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/sec:opacity-100
@@ -440,7 +440,7 @@
               <div class="flex-1 min-w-0">
                 <h4 class="font-bold text-gray-900 dark:text-white group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors text-sm" x-text="sec.nombre"></h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed line-clamp-2" x-text="sec.descripcion || 'Sin descripción'"></p>
-                <span class="inline-block mt-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg" x-text="sec.items.length + ' recursos'"></span>
+                <span class="inline-block mt-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg" x-text="(sec.items || []).length + ' recursos'"></span>
               </div>
               <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-all group-hover:translate-x-0.5 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </button>
@@ -463,7 +463,7 @@
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5" x-text="seccion.descripcion || 'Sin descripción'"></p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-xl font-medium" x-text="seccion.items.length + ' recursos'"></span>
+              <span class="text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-xl font-medium" x-text="(seccion.items || []).length + ' recursos'"></span>
               <button @click="abrirModalRecurso(seccion.id)"
                 class="flex items-center gap-1.5 btn-primary text-xs px-3 py-1.5">
                 <span class="text-sm font-bold">+</span> Agregar
@@ -751,6 +751,7 @@ function app() {
       if (!link)   { this.showToast('El link/URL es requerido', 'error'); return; }
       const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === this.editingSeccionId);
       if (!sec) return;
+      if (!sec.items) sec.items = [];
       if (this.editingRecurso) {
         const idx = sec.items.findIndex(i => i.titulo === this.editingRecurso);
         if (idx !== -1) sec.items[idx] = { ...this.formRecurso, titulo };
@@ -765,7 +766,7 @@ function app() {
 
     async eliminarRecurso(seccionId, titulo) {
       const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === seccionId);
-      if (sec) sec.items = sec.items.filter(i => i.titulo !== titulo);
+      if (sec) sec.items = (sec.items || []).filter(i => i.titulo !== titulo);
       await this.guardar();
       this.showToast('Recurso eliminado', 'info');
     },
@@ -826,18 +827,19 @@ function app() {
     },
 
     itemsFiltrados(seccion) {
-      if (!this.busqueda || this.busqueda.length < 2) return seccion.items;
+      const items = seccion.items || [];
+      if (!this.busqueda || this.busqueda.length < 2) return items;
       const q = this.busqueda.toLowerCase();
-      return seccion.items.filter(i =>
+      return items.filter(i =>
         i.titulo.toLowerCase().includes(q) || (i.descripcion||'').toLowerCase().includes(q)
       );
     },
 
     statsActivos() {
       const secs  = this.seccionesActivas();
-      const total = secs.reduce((a, s) => a + s.items.length, 0);
-      const docs  = secs.reduce((a, s) => a + s.items.filter(i => i.tipo==='documento').length, 0);
-      const forms = secs.reduce((a, s) => a + s.items.filter(i => i.tipo==='formulario').length, 0);
+      const total = secs.reduce((a, s) => a + (s.items || []).length, 0);
+      const docs  = secs.reduce((a, s) => a + (s.items || []).filter(i => i.tipo==='documento').length, 0);
+      const forms = secs.reduce((a, s) => a + (s.items || []).filter(i => i.tipo==='formulario').length, 0);
       return [
         { icono:'📁', valor:secs.length, label:'Secciones'   },
         { icono:'🔗', valor:total,        label:'Recursos'    },
