@@ -4,8 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gabinete Pedagógico — UPeU</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -13,53 +17,40 @@
     }
   </script>
 
-  <!-- ================================================
-       🔥 FIREBASE — PASO 1: Pega aquí tu configuración
-       Obtén estos datos en:
-       console.firebase.google.com → Tu proyecto
-       → Configuración ⚙️ → Tus apps → Config
-  ================================================= -->
-  <!-- Firebase Realtime Database (más simple y sin problemas de conexión) -->
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-  <script>
-    const FIREBASE_CONFIG = {
-      apiKey:            "AIzaSyD8K_i48mk24mGLENh-2jlKVNdpwhFHdSw",
-      authDomain:        "gabinete-833ab.firebaseapp.com",
-      projectId:         "gabinete-833ab",
-      storageBucket:     "gabinete-833ab.firebasestorage.app",
-      messagingSenderId: "677147799273",
-      appId:             "1:677147799273:web:77cf925c8d227662e20a78",
-      databaseURL:       "https://gabinete-833ab-default-rtdb.firebaseio.com"
-    };
 
-    const _configIncompleta = FIREBASE_CONFIG.apiKey === "TU_API_KEY";
-    let _db = null;
-    if (!_configIncompleta) {
-      firebase.initializeApp(FIREBASE_CONFIG);
-      _db = firebase.database();
-    }
-  </script>
-  <!-- ================================================ -->
+  <!-- App JS (deben cargarse antes de Alpine) -->
+  <script src="js/firebase.js"></script>
+  <script src="js/helpers.js"></script>
+  <script src="js/ciclos.js"></script>
+  <script src="js/secciones.js"></script>
+  <script src="js/recursos.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
 
+  <!-- Alpine.js (diferido: se ejecuta después de los scripts anteriores) -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body class="h-full overflow-hidden bg-slate-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300">
 
-<!-- PROGRESS BAR -->
+<!-- BARRA DE PROGRESO -->
 <div class="progress-bar" :style="`width:${progress}%`"></div>
 
-<!-- PANTALLA: Firebase no configurado — solo aparece si el config tiene valores vacíos -->
+<!-- PANTALLA: Firebase no configurado -->
 <div x-show="configSinLlenar" x-cloak
   class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-sm">
   <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-lg p-8 text-center">
     <div class="text-6xl mb-4">🔥</div>
     <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Configura Firebase</h2>
     <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed">
-      Para guardar los datos en la nube necesitas conectar Firebase Firestore.
-      Sigue los pasos y luego pega tu configuración en el <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">index.html</code>.
+      Para guardar los datos en la nube necesitas conectar Firebase Realtime Database.
+      Sigue los pasos y luego pega tu configuración en <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">js/firebase.js</code>.
     </p>
     <div class="text-left bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 mb-6 space-y-3">
       <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Pasos rápidos</p>
@@ -69,7 +60,7 @@
       </div>
       <div class="flex gap-3 text-sm">
         <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-        <span class="text-gray-700 dark:text-gray-300">En el proyecto → <strong>Build → Firestore Database</strong> → Crear base de datos → <em>Modo de prueba</em></span>
+        <span class="text-gray-700 dark:text-gray-300">En el proyecto → <strong>Build → Realtime Database</strong> → Crear base de datos → <em>Modo de prueba</em></span>
       </div>
       <div class="flex gap-3 text-sm">
         <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
@@ -77,36 +68,36 @@
       </div>
       <div class="flex gap-3 text-sm">
         <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400 flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
-        <span class="text-gray-700 dark:text-gray-300">Pegar los valores en la sección <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">FIREBASE_CONFIG</code> del <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">index.html</code></span>
+        <span class="text-gray-700 dark:text-gray-300">Pegar los valores en <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded text-xs">js/firebase.js</code></span>
       </div>
     </div>
     <div class="flex gap-3 justify-center">
-      <button @click="ignorarConfig=true"
-        class="btn-ghost border border-gray-200 dark:border-gray-600 text-sm">
+      <button @click="configSinLlenar=false" class="btn-ghost border border-gray-200 dark:border-gray-600 text-sm">
         Usar sin Firebase (local)
       </button>
-      <a href="https://console.firebase.google.com" target="_blank"
-        class="btn-primary text-sm flex items-center gap-2">
+      <a href="https://console.firebase.google.com" target="_blank" class="btn-primary text-sm flex items-center gap-2">
         <span>🔥</span> Ir a Firebase Console
       </a>
     </div>
   </div>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- TOASTS -->
 <div id="toast-container">
   <template x-for="t in toasts" :key="t.id">
     <div :class="'toast toast-' + t.tipo" x-text="t.msg"></div>
   </template>
 </div>
 
-<!-- MOBILE OVERLAY -->
+<!-- OVERLAY MOBILE -->
 <div id="sidebarOverlay" @click="sidebarOpen=false" :class="{'show':sidebarOpen}"></div>
 
-<!-- ===================== MODALS ===================== -->
+<!-- ==================== MODALES ==================== -->
 
-<!-- MODAL: Nuevo Ciclo Académico -->
-<div x-show="modal.ciclo" x-cloak class="modal-overlay" @click.self="modal.ciclo=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+<!-- Modal: Nuevo Ciclo -->
+<div x-show="modal.ciclo" x-cloak class="modal-overlay" @click.self="modal.ciclo=false"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
   <div class="modal-box p-6">
     <div class="flex items-center justify-between mb-5">
       <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -119,7 +110,8 @@
     <div class="space-y-4">
       <div>
         <label class="form-label">Nombre del ciclo *</label>
-        <input x-model="formCiclo.nombre" @keyup.enter="guardarCiclo()" type="text" placeholder="Ej: 2026-1" class="form-input" maxlength="20" />
+        <input x-model="formCiclo.nombre" @keyup.enter="guardarCiclo()" type="text"
+          placeholder="Ej: 2026-1" class="form-input" maxlength="20" />
         <p class="text-xs text-gray-400 mt-1">Formato sugerido: YYYY-N (ej: 2026-1, 2026-2)</p>
       </div>
     </div>
@@ -130,8 +122,10 @@
   </div>
 </div>
 
-<!-- MODAL: Nueva Sección / Área -->
-<div x-show="modal.seccion" x-cloak class="modal-overlay" @click.self="modal.seccion=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+<!-- Modal: Nueva Sección -->
+<div x-show="modal.seccion" x-cloak class="modal-overlay" @click.self="modal.seccion=false"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
   <div class="modal-box p-6">
     <div class="flex items-center justify-between mb-5">
       <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -154,7 +148,8 @@
         <label class="form-label">Ícono</label>
         <div class="emoji-grid mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
           <template x-for="e in emojis" :key="e">
-            <button type="button" @click="formSeccion.icono=e" :class="formSeccion.icono===e?'emoji-btn sel':'emoji-btn'" x-text="e"></button>
+            <button type="button" @click="formSeccion.icono=e"
+              :class="formSeccion.icono===e ? 'emoji-btn sel' : 'emoji-btn'" x-text="e"></button>
           </template>
         </div>
       </div>
@@ -162,7 +157,8 @@
         <label class="form-label">Color</label>
         <div class="color-pick mt-1">
           <template x-for="c in colores" :key="c">
-            <button type="button" @click="formSeccion.color=c" :class="'color-dot color-dot-'+c+(formSeccion.color===c?' sel':'')"></button>
+            <button type="button" @click="formSeccion.color=c"
+              :class="'color-dot color-dot-'+c+(formSeccion.color===c?' sel':'')"></button>
           </template>
         </div>
       </div>
@@ -174,8 +170,10 @@
   </div>
 </div>
 
-<!-- MODAL: Nuevo / Editar Recurso -->
-<div x-show="modal.recurso" x-cloak class="modal-overlay" @click.self="modal.recurso=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+<!-- Modal: Nuevo / Editar Recurso -->
+<div x-show="modal.recurso" x-cloak class="modal-overlay" @click.self="modal.recurso=false"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
   <div class="modal-box p-6 max-w-lg">
     <div class="flex items-center justify-between mb-5">
       <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -219,16 +217,20 @@
     </div>
     <div class="flex gap-3 mt-6 justify-end">
       <button @click="modal.recurso=false" class="btn-ghost">Cancelar</button>
-      <button @click="guardarRecurso()" class="btn-primary" x-text="editingRecurso ? 'Guardar Cambios' : 'Agregar Recurso'"></button>
+      <button @click="guardarRecurso()" class="btn-primary"
+        x-text="editingRecurso ? 'Guardar Cambios' : 'Agregar Recurso'"></button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: Confirmar Eliminación -->
-<div x-show="modal.confirmar" x-cloak class="modal-overlay" @click.self="modal.confirmar=false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+<!-- Modal: Confirmar Eliminación -->
+<div x-show="modal.confirmar" x-cloak class="modal-overlay" @click.self="modal.confirmar=false"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
   <div class="modal-box p-6 max-w-sm text-center">
     <div class="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
-    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2" x-text="'Eliminar ' + (confirmData.tipo || 'elemento')"></h3>
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2"
+      x-text="'Eliminar ' + (confirmData.tipo || 'elemento')"></h3>
     <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
       ¿Estás seguro? Esta acción no se puede deshacer.
       <strong class="block mt-1 text-gray-700 dark:text-gray-300" x-text="confirmData.nombre"></strong>
@@ -240,7 +242,7 @@
   </div>
 </div>
 
-<!-- ===================== LAYOUT ===================== -->
+<!-- ==================== LAYOUT ==================== -->
 <div class="flex h-full overflow-hidden">
 
   <!-- SIDEBAR -->
@@ -258,7 +260,7 @@
       </div>
     </div>
 
-    <!-- Scroll del sidebar -->
+    <!-- Navegación -->
     <div class="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5">
 
       <!-- Inicio -->
@@ -277,7 +279,7 @@
         <span>Dashboard</span>
       </button>
 
-      <!-- SEMESTRES -->
+      <!-- Ciclos -->
       <div class="pt-4">
         <div class="flex items-center justify-between px-3 mb-2">
           <p class="text-xs font-semibold text-white/35 uppercase tracking-widest">Ciclos</p>
@@ -293,7 +295,6 @@
               <span x-text="sem" class="flex-1"></span>
               <span x-show="semestreActivo===sem" class="text-xs text-upeu-gold bg-white/10 px-1.5 py-0.5 rounded-md">activo</span>
             </button>
-            <!-- Eliminar ciclo (solo si no es el activo y no es el único) -->
             <button x-show="data.semestres.length > 1 && semestreActivo !== sem"
               @click="confirmarEliminar('Ciclo', sem, () => eliminarCiclo(sem))"
               class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/sem:opacity-100
@@ -303,7 +304,7 @@
         </template>
       </div>
 
-      <!-- SECCIONES -->
+      <!-- Secciones -->
       <div class="pt-4">
         <div class="flex items-center justify-between px-3 mb-2">
           <p class="text-xs font-semibold text-white/35 uppercase tracking-widest">Secciones</p>
@@ -331,30 +332,26 @@
       </div>
     </div>
 
-    <!-- Footer con estado Firebase + exportar/importar -->
-    <div class="flex-shrink-0 border-t border-white/10 p-3 space-y-1.5">
-
-      <!-- Estado de conexión Firebase -->
-      <div class="flex items-center gap-2 px-3 py-2 rounded-lg mb-1"
+    <!-- Footer -->
+    <div class="flex-shrink-0 border-t border-white/10 p-3">
+      <div class="flex items-center gap-2 px-3 py-2 rounded-lg"
         :class="firebaseOk ? 'bg-emerald-900/30' : 'bg-white/5'">
         <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
           <span x-show="firebaseOk" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2.5 w-2.5"
             :class="firebaseOk ? 'bg-emerald-400' : 'bg-gray-500'"></span>
         </span>
-        <span class="text-xs"
-          :class="firebaseOk ? 'text-emerald-400' : 'text-white/40'"
+        <span class="text-xs" :class="firebaseOk ? 'text-emerald-400' : 'text-white/40'"
           x-text="firebaseOk ? 'Firebase conectado' : 'Modo local (sin Firebase)'"></span>
       </div>
-
-<p class="text-center text-xs text-white/20 pt-1">© 2025 UPeU · Gabinete Pedagógico</p>
+      <p class="text-center text-xs text-white/20 pt-2">© 2026 UPeU · Gabinete Pedagógico</p>
     </div>
   </aside>
 
   <!-- COLUMNA DERECHA -->
   <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-    <!-- HEADER FIJO -->
+    <!-- HEADER -->
     <header class="flex-shrink-0 header-gradient text-white px-5 py-3 flex items-center gap-4 shadow-lg z-20">
       <button @click="sidebarOpen=!sidebarOpen" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -379,19 +376,19 @@
       </div>
 
       <!-- Dark mode -->
-      <button @click="darkMode=!darkMode" class="p-2 rounded-xl hover:bg-white/10 transition-colors" :title="darkMode?'Modo claro':'Modo oscuro'">
-        <span x-text="darkMode?'☀️':'🌙'" class="text-lg leading-none"></span>
+      <button @click="darkMode=!darkMode" class="p-2 rounded-xl hover:bg-white/10 transition-colors"
+        :title="darkMode ? 'Modo claro' : 'Modo oscuro'">
+        <span x-text="darkMode ? '☀️' : '🌙'" class="text-lg leading-none"></span>
       </button>
     </header>
 
-    <!-- MAIN SCROLLABLE -->
+    <!-- CONTENIDO PRINCIPAL -->
     <main class="flex-1 overflow-y-auto">
 
-      <!-- ===== VISTA DASHBOARD ===== -->
+      <!-- ===== VISTA: DASHBOARD ===== -->
       <div x-show="vistaActiva==='dashboard'" class="p-5 md:p-7 page-enter"
            x-effect="if(vistaActiva==='dashboard') $nextTick(() => initCharts())">
 
-        <!-- Encabezado -->
         <div class="mb-6">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -431,7 +428,7 @@
           </div>
         </div>
 
-        <!-- Fila 1: Donut + Horizontal bar -->
+        <!-- Gráficos fila 1 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Recursos por tipo</h3>
@@ -447,7 +444,7 @@
           </div>
         </div>
 
-        <!-- Fila 2: Bar semestres + Line fechas -->
+        <!-- Gráficos fila 2 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Comparativo por ciclo</h3>
@@ -460,15 +457,15 @@
             <div style="position:relative;height:220px">
               <canvas id="chartFechas"></canvas>
             </div>
-            <p x-show="dashboardData().fechas.length === 0" class="text-xs text-center text-gray-400 dark:text-gray-500 mt-2">
+            <p x-show="dashboardData().fechas.length === 0"
+              class="text-xs text-center text-gray-400 dark:text-gray-500 mt-2">
               Agrega fechas a los recursos para ver la evolución
             </p>
           </div>
         </div>
-
       </div>
 
-      <!-- ===== VISTA INICIO ===== -->
+      <!-- ===== VISTA: INICIO ===== -->
       <div x-show="vistaActiva==='inicio'" class="p-5 md:p-7 page-enter">
 
         <!-- Banner -->
@@ -523,7 +520,8 @@
               <div class="flex-1 min-w-0">
                 <h4 class="font-bold text-gray-900 dark:text-white group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-colors text-sm" x-text="sec.nombre"></h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed line-clamp-2" x-text="sec.descripcion || 'Sin descripción'"></p>
-                <span class="inline-block mt-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg" x-text="(sec.items || []).length + ' recursos'"></span>
+                <span class="inline-block mt-2 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg"
+                  x-text="(sec.items || []).length + ' recursos'"></span>
               </div>
               <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-upeu-blue dark:group-hover:text-blue-400 transition-all group-hover:translate-x-0.5 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </button>
@@ -531,11 +529,11 @@
         </div>
       </div>
 
-      <!-- ===== VISTAS DE SECCIÓN ===== -->
+      <!-- ===== VISTAS: SECCIONES ===== -->
       <template x-for="seccion in seccionesActivas()" :key="seccion.id">
         <div x-show="vistaActiva===seccion.id" class="p-5 md:p-7 page-enter">
 
-          <!-- Header sección -->
+          <!-- Header -->
           <div :class="'section-'+seccion.color"
             class="bg-white dark:bg-gray-800 rounded-2xl px-5 md:px-6 py-5 mb-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-4">
             <div :class="'icon-'+seccion.color" class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0">
@@ -546,7 +544,8 @@
               <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5" x-text="seccion.descripcion || 'Sin descripción'"></p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <span class="text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-xl font-medium" x-text="(seccion.items || []).length + ' recursos'"></span>
+              <span class="text-sm bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-xl font-medium"
+                x-text="(seccion.items || []).length + ' recursos'"></span>
               <button @click="abrirModalRecurso(seccion.id)"
                 class="flex items-center gap-1.5 btn-primary text-xs px-3 py-1.5">
                 <span class="text-sm font-bold">+</span> Agregar
@@ -556,12 +555,11 @@
 
           <!-- Búsqueda mobile -->
           <div class="sm:hidden mb-4 relative">
-            <input x-model="busqueda" type="text" placeholder="Buscar recurso..."
-              class="form-input pr-9" />
+            <input x-model="busqueda" type="text" placeholder="Buscar recurso..." class="form-input pr-9" />
             <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
           </div>
 
-          <!-- Banner búsqueda activa -->
+          <!-- Banner búsqueda -->
           <div x-show="busqueda.length > 1" x-transition
             class="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
@@ -573,41 +571,29 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <template x-for="(item, idx) in itemsFiltrados(seccion)" :key="item.titulo + idx">
               <div class="card-resource bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col overflow-hidden group">
-
-                <!-- Barra de color superior -->
                 <div :class="'h-1 bg-gradient-to-r ' + colorGradient(seccion.color)"></div>
-
                 <div class="p-5 flex flex-col gap-3 flex-1">
-                  <!-- Badge + fecha -->
                   <div class="flex items-center justify-between gap-2">
                     <span :class="'badge-'+item.tipo" class="text-xs px-2.5 py-1 rounded-lg font-medium flex-shrink-0" x-text="tipoLabel(item.tipo)"></span>
                     <span class="text-xs text-gray-400 dark:text-gray-500 truncate" x-text="formatFecha(item.fecha)"></span>
                   </div>
-
-                  <!-- Título + descripción -->
                   <div class="flex-1">
                     <h4 class="text-sm font-bold text-gray-900 dark:text-white leading-snug" x-text="item.titulo"></h4>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed line-clamp-3" x-text="item.descripcion || ''"></p>
                   </div>
-
-                  <!-- Footer de la card -->
                   <div class="flex items-center justify-between pt-2 border-t border-gray-50 dark:border-gray-700 gap-2">
-                    <!-- CTA -->
                     <a :href="item.link" target="_blank" rel="noopener"
                       :class="item.link && item.link !== '#' ? 'text-upeu-blue dark:text-blue-400 hover:underline' : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'"
                       class="flex items-center gap-1.5 text-xs font-semibold transition-all">
                       <span x-text="item.link && item.link !== '#' ? 'Abrir recurso' : 'Sin link'"></span>
                       <svg x-show="item.link && item.link !== '#'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                     </a>
-                    <!-- Admin actions -->
                     <div class="admin-actions flex items-center gap-1">
-                      <button @click.prevent="abrirEditarRecurso(seccion.id, item)"
-                        title="Editar"
+                      <button @click.prevent="abrirEditarRecurso(seccion.id, item)" title="Editar"
                         class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                       </button>
-                      <button @click.prevent="confirmarEliminar('Recurso', item.titulo, () => eliminarRecurso(seccion.id, item.titulo))"
-                        title="Eliminar"
+                      <button @click.prevent="confirmarEliminar('Recurso', item.titulo, () => eliminarRecurso(seccion.id, item.titulo))" title="Eliminar"
                         class="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/40 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                       </button>
@@ -617,7 +603,7 @@
               </div>
             </template>
 
-            <!-- Empty state -->
+            <!-- Estado vacío -->
             <div x-show="itemsFiltrados(seccion).length === 0" class="col-span-full empty-state">
               <div class="text-5xl mb-3" x-text="busqueda.length > 1 ? '🔍' : '📭'"></div>
               <p class="font-semibold text-gray-600 dark:text-gray-400"
@@ -637,460 +623,5 @@
   </div>
 </div>
 
-<!-- ===== ALPINE APP ===== -->
-<script>
-function app() {
-  return {
-    // ─── Estado general ───────────────────────────────────
-    data: {},
-    semestreActivo: '2025-2',
-    vistaActiva: 'inicio',
-    busqueda: '',
-    darkMode: false,
-    sidebarOpen: false,
-    progress: 0,
-    toasts: [],
-    firebaseOk: false,
-    configSinLlenar: false,  // true solo si el config tiene valores placeholder
-    _fbUnsub: null,          // listener tiempo real
-    _guardando: false,       // evita loops de onSnapshot
-
-    // ─── Modales ──────────────────────────────────────────
-    modal: { ciclo:false, seccion:false, recurso:false, confirmar:false },
-    confirmData: { tipo:'', nombre:'', fn: ()=>{} },
-    editingRecurso: null,
-    editingSeccionId: null,
-    formCiclo:   { nombre:'' },
-    formSeccion: { nombre:'', icono:'📁', color:'blue', descripcion:'' },
-    formRecurso: { titulo:'', descripcion:'', link:'', tipo:'documento', fecha:'' },
-    emojis: ['📋','📄','📁','🗂️','📊','📈','📝','🎓','👁️','📅','🏆','🔗','💻','🎯','⚙️','🔔','📌','✅','📢','🗺️','🏫','👥','📞','🔍','💡','🌐','📸','🎬'],
-    colores: ['blue','purple','green','orange','red','gray'],
-
-    // ─── INIT ─────────────────────────────────────────────
-    async init() {
-      this.progress = 20;
-      this.darkMode = localStorage.getItem('darkMode') === 'true';
-      this.$watch('darkMode', v => localStorage.setItem('darkMode', v));
-      document.addEventListener('click', this.addRipple);
-
-      // Detectar si el config es placeholder
-      if (_configIncompleta) {
-        this.configSinLlenar = true;
-        await this._cargarLocal();
-        this.progress = 100;
-        setTimeout(() => this.progress = 0, 600);
-        return;
-      }
-
-      // Config completa → conectar Realtime Database
-      this.progress = 50;
-      try {
-        const ref = _db.ref('gabinete/datos');
-        const snap = await ref.once('value');
-
-        if (snap.exists()) {
-          this.data = snap.val();
-        } else {
-          // Primera vez: cargar data.json y subir a Firebase
-          await this._cargarJSON();
-          await ref.set(JSON.parse(JSON.stringify(this.data)));
-          this.showToast('¡Datos subidos a Firebase! ✅', 'success');
-        }
-
-        this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
-        this.firebaseOk = true;
-        this.progress = 100;
-        setTimeout(() => this.progress = 0, 600);
-
-        // Escuchar cambios en tiempo real
-        this._fbUnsub = ref.on('value', snap => {
-          if (!this._guardando && snap.exists()) {
-            this.data = snap.val();
-          }
-        });
-
-      } catch(e) {
-        console.error('Firebase error:', e.message);
-        this.showToast('Error Firebase: ' + e.message, 'error');
-        await this._cargarLocal();
-        this.progress = 100;
-        setTimeout(() => this.progress = 0, 600);
-      }
-    },
-
-    async _cargarJSON() {
-      try {
-        const res = await fetch('data.json');
-        this.data = await res.json();
-      } catch {
-        this.data = { semestres:['2025-2'], semestreActivo:'2025-2', datos:{ '2025-2':{ secciones:[] } } };
-      }
-    },
-
-    async _cargarLocal() {
-      const stored = localStorage.getItem('gabinete_data');
-      if (stored) {
-        try { this.data = JSON.parse(stored); return; } catch {}
-      }
-      await this._cargarJSON();
-      this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0] || '2025-2';
-    },
-
-    // Guarda en Firebase Realtime Database o localStorage
-    async guardar() {
-      if (this.firebaseOk && _db) {
-        try {
-          this._guardando = true;
-          await _db.ref('gabinete/datos').set(JSON.parse(JSON.stringify(this.data)));
-          setTimeout(() => { this._guardando = false; }, 500);
-        } catch(e) {
-          this._guardando = false;
-          this.showToast('Error al guardar en Firebase', 'error');
-          localStorage.setItem('gabinete_data', JSON.stringify(this.data));
-        }
-      } else {
-        localStorage.setItem('gabinete_data', JSON.stringify(this.data));
-      }
-    },
-
-    // ─── CICLOS ───────────────────────────────────────────
-    abrirModalCiclo() {
-      this.formCiclo = { nombre:'' };
-      this.modal.ciclo = true;
-      this.$nextTick(() => document.querySelector('[x-model="formCiclo.nombre"]')?.focus());
-    },
-
-    async guardarCiclo() {
-      const nombre = this.formCiclo.nombre.trim();
-      if (!nombre) { this.showToast('El nombre del ciclo es requerido', 'error'); return; }
-      if (this.data.semestres.includes(nombre)) { this.showToast('Ese ciclo ya existe', 'error'); return; }
-      this.data.semestres.unshift(nombre);
-      if (!this.data.datos) this.data.datos = {};
-      this.data.datos[nombre] = { secciones:[] };
-      this.modal.ciclo = false;
-      await this.guardar();
-      this.setSemestre(nombre);
-      this.showToast(`Ciclo ${nombre} creado`, 'success');
-    },
-
-    async eliminarCiclo(nombre) {
-      this.data.semestres = this.data.semestres.filter(s => s !== nombre);
-      delete this.data.datos[nombre];
-      if (this.semestreActivo === nombre) {
-        this.semestreActivo = this.data.semestres[0];
-        this.vistaActiva = 'inicio';
-      }
-      await this.guardar();
-      this.showToast(`Ciclo ${nombre} eliminado`, 'info');
-    },
-
-    // ─── SECCIONES ────────────────────────────────────────
-    abrirModalSeccion() {
-      this.formSeccion = { nombre:'', icono:'📁', color:'blue', descripcion:'' };
-      this.modal.seccion = true;
-    },
-
-    async guardarSeccion() {
-      const nombre = this.formSeccion.nombre.trim();
-      if (!nombre) { this.showToast('El nombre es requerido', 'error'); return; }
-      const secciones = this.data.datos[this.semestreActivo].secciones;
-      const id = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-      if (secciones.find(s => s.id === id)) { this.showToast('Ya existe esa sección', 'error'); return; }
-      secciones.push({ id, nombre, icono:this.formSeccion.icono, color:this.formSeccion.color, descripcion:this.formSeccion.descripcion, items:[] });
-      this.modal.seccion = false;
-      await this.guardar();
-      this.showToast(`Sección "${nombre}" creada`, 'success');
-      this.$nextTick(() => this.setVista(id));
-    },
-
-    async eliminarSeccion(id) {
-      const secs = this.data.datos[this.semestreActivo].secciones;
-      this.data.datos[this.semestreActivo].secciones = secs.filter(s => s.id !== id);
-      if (this.vistaActiva === id) this.vistaActiva = 'inicio';
-      await this.guardar();
-      this.showToast('Sección eliminada', 'info');
-    },
-
-    // ─── RECURSOS ─────────────────────────────────────────
-    abrirModalRecurso(seccionId) {
-      this.editingRecurso = null;
-      this.editingSeccionId = seccionId;
-      this.formRecurso = { titulo:'', descripcion:'', link:'', tipo:'documento', fecha: new Date().toISOString().split('T')[0] };
-      this.modal.recurso = true;
-      this.$nextTick(() => document.querySelector('[x-model="formRecurso.titulo"]')?.focus());
-    },
-
-    abrirEditarRecurso(seccionId, item) {
-      this.editingRecurso = item.titulo;
-      this.editingSeccionId = seccionId;
-      this.formRecurso = { ...item };
-      this.modal.recurso = true;
-    },
-
-    async guardarRecurso() {
-      const titulo = this.formRecurso.titulo.trim();
-      const link   = this.formRecurso.link.trim();
-      if (!titulo) { this.showToast('El título es requerido', 'error'); return; }
-      if (!link)   { this.showToast('El link/URL es requerido', 'error'); return; }
-      const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === this.editingSeccionId);
-      if (!sec) return;
-      if (!sec.items) sec.items = [];
-      if (this.editingRecurso) {
-        const idx = sec.items.findIndex(i => i.titulo === this.editingRecurso);
-        if (idx !== -1) sec.items[idx] = { ...this.formRecurso, titulo };
-        this.showToast('Recurso actualizado', 'success');
-      } else {
-        sec.items.push({ titulo, descripcion:this.formRecurso.descripcion, link, tipo:this.formRecurso.tipo, fecha:this.formRecurso.fecha });
-        this.showToast(`"${titulo}" agregado`, 'success');
-      }
-      this.modal.recurso = false;
-      await this.guardar();
-    },
-
-    async eliminarRecurso(seccionId, titulo) {
-      const sec = this.data.datos[this.semestreActivo].secciones.find(s => s.id === seccionId);
-      if (sec) sec.items = (sec.items || []).filter(i => i.titulo !== titulo);
-      await this.guardar();
-      this.showToast('Recurso eliminado', 'info');
-    },
-
-    // ─── CONFIRMAR ────────────────────────────────────────
-    confirmarEliminar(tipo, nombre, fn) {
-      this.confirmData = { tipo, nombre, fn };
-      this.modal.confirmar = true;
-    },
-
-    // ─── DASHBOARD ────────────────────────────────────────
-    _charts: {},
-
-    dashboardData() {
-      const secs = this.seccionesActivas();
-      const allItems = secs.flatMap(s => s.items || []);
-      const tipos = ['documento', 'formulario', 'evento', 'sistema', 'recurso'];
-      const porTipo = tipos.map(t => allItems.filter(i => i.tipo === t).length);
-      const maxTipo = Math.max(...porTipo);
-      const tipoMasComun = maxTipo > 0 ? tipos[porTipo.indexOf(maxTipo)] : '—';
-      const semestres = this.data?.semestres || [];
-      const porSemestre = semestres.map(sem => {
-        const s = this.data?.datos?.[sem]?.secciones || [];
-        return s.reduce((a, sec) => a + (sec.items || []).length, 0);
-      });
-      const porFechaMap = {};
-      allItems.filter(i => i.fecha).forEach(i => {
-        const mes = i.fecha.slice(0, 7);
-        porFechaMap[mes] = (porFechaMap[mes] || 0) + 1;
-      });
-      const fechas = Object.keys(porFechaMap).sort();
-      return {
-        totalRecursos: allItems.length,
-        totalSecciones: secs.length,
-        totalSemestres: semestres.length,
-        tipoMasComun,
-        porTipo,
-        labelsSecs: secs.map(s => s.nombre),
-        countsSecs: secs.map(s => (s.items || []).length),
-        semestres,
-        porSemestre,
-        fechas,
-        porFecha: fechas.map(f => porFechaMap[f]),
-      };
-    },
-
-    initCharts() {
-      const dd = this.dashboardData();
-      const isDark = this.darkMode;
-      const textColor  = isDark ? '#94a3b8' : '#64748b';
-      const gridColor  = isDark ? '#374151' : '#f1f5f9';
-      const COLORES = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#6366f1'];
-
-      Object.values(this._charts).forEach(c => c && c.destroy());
-      this._charts = {};
-
-      const mkTipos = document.getElementById('chartTipos');
-      if (mkTipos) {
-        this._charts.tipos = new Chart(mkTipos, {
-          type: 'doughnut',
-          data: {
-            labels: ['Documento','Formulario','Evento','Sistema','Recurso'],
-            datasets: [{ data: dd.porTipo, backgroundColor: COLORES, borderWidth: 0, hoverOffset: 8 }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, padding: 14, font: { size: 11 } } } }
-          }
-        });
-      }
-
-      const mkSecs = document.getElementById('chartSecciones');
-      if (mkSecs) {
-        this._charts.secs = new Chart(mkSecs, {
-          type: 'bar',
-          data: {
-            labels: dd.labelsSecs.length ? dd.labelsSecs : ['Sin secciones'],
-            datasets: [{ label: 'Recursos', data: dd.countsSecs.length ? dd.countsSecs : [0],
-              backgroundColor: '#3b82f650', borderColor: '#3b82f6', borderWidth: 2, borderRadius: 6 }]
-          },
-          options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } },
-              y: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } }
-            }
-          }
-        });
-      }
-
-      const mkSem = document.getElementById('chartSemestres');
-      if (mkSem) {
-        const bgColors = dd.semestres.map(s => s === this.semestreActivo ? '#c8a94a' : '#3b82f650');
-        const bdColors = dd.semestres.map(s => s === this.semestreActivo ? '#c8a94a' : '#3b82f6');
-        this._charts.sem = new Chart(mkSem, {
-          type: 'bar',
-          data: {
-            labels: dd.semestres.length ? dd.semestres : ['Sin ciclos'],
-            datasets: [{ label: 'Recursos', data: dd.porSemestre.length ? dd.porSemestre : [0],
-              backgroundColor: bgColors, borderColor: bdColors, borderWidth: 2, borderRadius: 6 }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: textColor } },
-              y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } }
-            }
-          }
-        });
-      }
-
-      const mkFecha = document.getElementById('chartFechas');
-      if (mkFecha && dd.fechas.length > 0) {
-        const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        this._charts.fecha = new Chart(mkFecha, {
-          type: 'line',
-          data: {
-            labels: dd.fechas.map(f => { const [y,m] = f.split('-'); return meses[+m] + ' ' + y; }),
-            datasets: [{ label: 'Recursos', data: dd.porFecha, fill: true,
-              backgroundColor: '#3b82f615', borderColor: '#3b82f6', borderWidth: 2,
-              tension: 0.4, pointBackgroundColor: '#3b82f6', pointRadius: 4 }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
-              y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } }
-            }
-          }
-        });
-      }
-    },
-
-    // ─── EXPORT / IMPORT ──────────────────────────────────
-    exportarJSON() {
-      const blob = new Blob([JSON.stringify(this.data, null, 2)], { type:'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'data.json';
-      a.click();
-      this.showToast('data.json descargado', 'success');
-    },
-
-    importarJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          this.data = JSON.parse(e.target.result);
-          this.semestreActivo = this.data.semestreActivo || this.data.semestres?.[0];
-          this.vistaActiva = 'inicio';
-          await this.guardar();
-          this.showToast('Datos importados y guardados en Firebase', 'success');
-        } catch { this.showToast('Archivo JSON inválido', 'error'); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    },
-
-    // ─── HELPERS ──────────────────────────────────────────
-    setSemestre(sem) {
-      this.semestreActivo = sem;
-      this.data.semestreActivo = sem;
-      this.vistaActiva = 'inicio';
-      this.busqueda = '';
-    },
-
-    setVista(id) {
-      this.vistaActiva = id;
-      this.busqueda = '';
-    },
-
-    seccionesActivas() {
-      return this.data?.datos?.[this.semestreActivo]?.secciones || [];
-    },
-
-    tituloVista() {
-      if (this.vistaActiva === 'inicio') return 'Inicio';
-      if (this.vistaActiva === 'dashboard') return 'Dashboard';
-      return this.seccionesActivas().find(s => s.id === this.vistaActiva)?.nombre || '';
-    },
-
-    itemsFiltrados(seccion) {
-      const items = seccion.items || [];
-      if (!this.busqueda || this.busqueda.length < 2) return items;
-      const q = this.busqueda.toLowerCase();
-      return items.filter(i =>
-        i.titulo.toLowerCase().includes(q) || (i.descripcion||'').toLowerCase().includes(q)
-      );
-    },
-
-    statsActivos() {
-      const secs  = this.seccionesActivas();
-      const total = secs.reduce((a, s) => a + (s.items || []).length, 0);
-      const docs  = secs.reduce((a, s) => a + (s.items || []).filter(i => i.tipo==='documento').length, 0);
-      const forms = secs.reduce((a, s) => a + (s.items || []).filter(i => i.tipo==='formulario').length, 0);
-      return [
-        { icono:'📁', valor:secs.length, label:'Secciones'   },
-        { icono:'🔗', valor:total,        label:'Recursos'    },
-        { icono:'📄', valor:docs,         label:'Documentos'  },
-        { icono:'📝', valor:forms,        label:'Formularios' },
-      ];
-    },
-
-    tipoLabel(tipo) {
-      return { documento:'📄 Documento', formulario:'📝 Formulario', evento:'🎓 Evento', sistema:'💻 Sistema', recurso:'🗂️ Recurso' }[tipo] || tipo;
-    },
-
-    formatFecha(fecha) {
-      if (!fecha) return '';
-      const [y,m,d] = fecha.split('-');
-      return `${d} ${['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+m]} ${y}`;
-    },
-
-    colorGradient(color) {
-      return { blue:'from-blue-400 to-blue-600', purple:'from-purple-400 to-purple-600', green:'from-emerald-400 to-emerald-600', orange:'from-amber-400 to-amber-600', red:'from-red-400 to-red-600', gray:'from-slate-400 to-slate-600' }[color] || 'from-gray-400 to-gray-600';
-    },
-
-    showToast(msg, tipo='info') {
-      const id = Date.now();
-      this.toasts.push({ id, msg, tipo });
-      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3200);
-    },
-
-    addRipple(e) {
-      const el = e.target.closest('.ripple-container');
-      if (!el) return;
-      const r = document.createElement('span');
-      const rect = el.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height) * 1.5;
-      r.className = 'ripple';
-      r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
-      el.appendChild(r);
-      setTimeout(() => r.remove(), 600);
-    }
-  }
-}
-</script>
 </body>
 </html>
