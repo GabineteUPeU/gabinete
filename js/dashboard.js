@@ -64,17 +64,27 @@ const dashboardMixin = {
       const res = await fetch(CSV_URL);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const rows = this._parseCSV(await res.text());
-      const data = rows.slice(1).filter(r => r.some(c => c)); // skip header row 1
 
+      // Fila 2 (índice 1): nombres de monitores en columnas B, C, D, E… (índices 1, 2, 3, 4…)
+      const nameRow = rows[1] || [];
+      const monitors = [];
+      for (let col = 1; col < nameRow.length; col++) {
+        const name = (nameRow[col] || '').trim();
+        if (name) monitors.push({ name, col });
+      }
+
+      // Filas desde la 3 (índice 2): contar celdas no vacías por columna
+      const dataRows = rows.slice(2);
       const counts = {};
-      data.forEach(r => {
-        const name = (r[1] || '').trim(); // columna B = índice 1
-        if (name) counts[name] = (counts[name] || 0) + 1;
+      monitors.forEach(m => {
+        counts[m.name] = dataRows.filter(r => (r[m.col] || '').trim() !== '').length;
       });
 
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
       const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
       this.monitoreoData = {
-        total:    data.length,
+        total,
         monitors: sorted.map(([n]) => n),
         counts:   sorted.map(([, c]) => c),
       };
@@ -130,136 +140,10 @@ const dashboardMixin = {
   },
 
   initCharts() {
-    const dd        = this.dashboardData();
-    const isDark    = this.darkMode;
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? '#374151' : '#f1f5f9';
-    const COLORES   = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#6366f1'];
 
     // Destruir instancias anteriores
     Object.values(this._charts).forEach(c => c && c.destroy());
     this._charts = {};
-
-    // Dona: recursos por tipo
-    const mkTipos = document.getElementById('chartTipos');
-    if (mkTipos) {
-      this._charts.tipos = new Chart(mkTipos, {
-        type: 'doughnut',
-        data: {
-          labels: ['Documento', 'Formulario', 'Evento', 'Sistema', 'Recurso'],
-          datasets: [{
-            data: dd.porTipo,
-            backgroundColor: COLORES,
-            borderWidth: 0,
-            hoverOffset: 8,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { color: textColor, padding: 14, font: { size: 11 } },
-            },
-          },
-        },
-      });
-    }
-
-    // Barras horizontales: recursos por sección
-    const mkSecs = document.getElementById('chartSecciones');
-    if (mkSecs) {
-      this._charts.secs = new Chart(mkSecs, {
-        type: 'bar',
-        data: {
-          labels:   dd.labelsSecs.length ? dd.labelsSecs : ['Sin secciones'],
-          datasets: [{
-            label: 'Recursos',
-            data:  dd.countsSecs.length ? dd.countsSecs : [0],
-            backgroundColor: '#3b82f650',
-            borderColor:     '#3b82f6',
-            borderWidth: 2,
-            borderRadius: 6,
-          }],
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } },
-            y: { grid: { display: false },   ticks: { color: textColor, font: { size: 11 } } },
-          },
-        },
-      });
-    }
-
-    // Barras: comparativo por ciclo
-    const mkSem = document.getElementById('chartSemestres');
-    if (mkSem) {
-      const bgColors = dd.semestres.map(s => s === this.semestreActivo ? '#c8a94a'   : '#3b82f650');
-      const bdColors = dd.semestres.map(s => s === this.semestreActivo ? '#c8a94a'   : '#3b82f6');
-      this._charts.sem = new Chart(mkSem, {
-        type: 'bar',
-        data: {
-          labels:   dd.semestres.length ? dd.semestres : ['Sin ciclos'],
-          datasets: [{
-            label: 'Recursos',
-            data:  dd.porSemestre.length ? dd.porSemestre : [0],
-            backgroundColor: bgColors,
-            borderColor:     bdColors,
-            borderWidth: 2,
-            borderRadius: 6,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: textColor } },
-            y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } },
-          },
-        },
-      });
-    }
-
-    // Línea: evolución temporal
-    const mkFecha = document.getElementById('chartFechas');
-    if (mkFecha && dd.fechas.length > 0) {
-      const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      this._charts.fecha = new Chart(mkFecha, {
-        type: 'line',
-        data: {
-          labels: dd.fechas.map(f => {
-            const [y, m] = f.split('-');
-            return meses[+m] + ' ' + y;
-          }),
-          datasets: [{
-            label: 'Recursos',
-            data:  dd.porFecha,
-            fill:  true,
-            backgroundColor: '#3b82f615',
-            borderColor:     '#3b82f6',
-            borderWidth: 2,
-            tension: 0.4,
-            pointBackgroundColor: '#3b82f6',
-            pointRadius: 4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
-            y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } },
-          },
-        },
-      });
-    }
 
     // Monitoreo: si ya hay datos, redibujar
     this.initMonitoreoCharts();

@@ -428,42 +428,6 @@
           </div>
         </div>
 
-        <!-- Gráficos fila 1 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Recursos por tipo</h3>
-            <div style="position:relative;height:220px">
-              <canvas id="chartTipos"></canvas>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Recursos por sección</h3>
-            <div style="position:relative;height:220px">
-              <canvas id="chartSecciones"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- Gráficos fila 2 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Comparativo por ciclo</h3>
-            <div style="position:relative;height:220px">
-              <canvas id="chartSemestres"></canvas>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Evolución temporal</h3>
-            <div style="position:relative;height:220px">
-              <canvas id="chartFechas"></canvas>
-            </div>
-            <p x-show="dashboardData().fechas.length === 0"
-              class="text-xs text-center text-gray-400 dark:text-gray-500 mt-2">
-              Agrega fechas a los recursos para ver la evolución
-            </p>
-          </div>
-        </div>
-
         <!-- ── Sección: Monitoreo Docente ── -->
         <div class="mt-7 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between mb-5">
