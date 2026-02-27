@@ -480,9 +480,8 @@
               <!-- KPI: total monitoreados -->
               <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center">
                 <div class="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl mb-4">👩‍🏫</div>
-                <p class="text-5xl font-bold text-emerald-600 dark:text-emerald-400" x-text="monitoreoData?.total ?? 0"></p>
-                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-2">Total docentes<br>monitoreados</p>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Registros en hoja Data</p>
+                <p class="text-5xl font-bold text-emerald-600 dark:text-emerald-400" x-text="monitoreoData?.kpiValue ?? '—'"></p>
+                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-2" x-text="monitoreoData?.kpiTitle || 'Total docentes monitoreados'"></p>
               </div>
 
               <!-- Gráfico: por monitor -->
