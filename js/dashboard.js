@@ -57,31 +57,41 @@ const dashboardMixin = {
         dynamicTyping:  false, // todo como string, evita que fechas/números se conviertan
       });
 
-      // Fila 1 (índice 0): A1=título KPI, B1:E1=nombres de monitores
-      const kpiTitle = (rows[0]?.[0] || '').trim();
-      const nameRow  = rows[0] || [];
-      const monitors = [];
-      for (let col = 1; col < nameRow.length; col++) {
-        const name = (nameRow[col] || '').trim();
-        if (name) monitors.push({ name, col });
+      const row0 = rows[0] || [];
+      const row1 = rows[1] || [];
+
+      // A1 = título KPI · A2 = número KPI
+      const kpiTitle = (row0[0] || '').trim();
+      const kpiValue = (row1[0] || '').trim();
+
+      // Leer todas las columnas B en adelante (índice 1+)
+      // Cada columna: nombre en fila 1, número en fila 2
+      const allCols = [];
+      for (let col = 1; col < Math.max(row0.length, row1.length); col++) {
+        const name = (row0[col] || '').trim();
+        const val  = Number((row1[col] || '0').trim()) || 0;
+        if (name) allCols.push({ name, val });
       }
 
-      // Fila 2 (índice 1): A2=número KPI, B2:E2=números de cada barra
-      const kpiValue = (rows[1]?.[0] || '').trim();
-      const counts   = monitors.map(m => Number((rows[1]?.[m.col] || '0').trim()) || 0);
+      // B–E (primeras 4 columnas con nombre) → gráfico de barras "Monitoreo por encargados"
+      const monitorCols = allCols.slice(0, 4);
+      // F–H (siguientes columnas con nombre) → gráfico circular "Tipo de monitoreo"
+      const tipoCols    = allCols.slice(4);
 
       this.monitoreoData = {
         kpiTitle,
         kpiValue,
-        monitors: monitors.map(m => m.name),
-        counts,
+        monitors:   monitorCols.map(c => c.name),
+        counts:     monitorCols.map(c => c.val),
+        tipoLabels: tipoCols.map(c => c.name),
+        tipoCounts: tipoCols.map(c => c.val),
       };
 
-      console.log('[Monitoreo] A1:', kpiTitle, '| A2:', kpiValue,
+      console.log('[Monitoreo] KPI:', kpiTitle, kpiValue,
         '| monitores:', this.monitoreoData.monitors,
-        '| conteos:', this.monitoreoData.counts);
+        '| tipo:', this.monitoreoData.tipoLabels, this.monitoreoData.tipoCounts);
 
-      setTimeout(() => this.initMonitoreoCharts(), 60);
+      setTimeout(() => { this.initMonitoreoCharts(); this.initTipoChart(); }, 60);
     } catch (e) {
       console.error('[Monitoreo] Error:', e);
       this.monitoreoData = { error: true, msg: e.message };
@@ -149,6 +159,47 @@ const dashboardMixin = {
     });
   },
 
+  initTipoChart() {
+    if (!this.monitoreoData || this.monitoreoData.error || !this.monitoreoData.tipoLabels?.length) return;
+    const isDark    = this.darkMode;
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const PALETTE   = ['#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+
+    if (this._charts.tipo) { this._charts.tipo.destroy(); this._charts.tipo = null; }
+    const el = document.getElementById('chartTipoMonitoreo');
+    if (!el) return;
+    this._charts.tipo = new Chart(el, {
+      type: 'doughnut',
+      plugins: [ChartDataLabels],
+      data: {
+        labels: this.monitoreoData.tipoLabels,
+        datasets: [{
+          data:            this.monitoreoData.tipoCounts,
+          backgroundColor: this.monitoreoData.tipoLabels.map((_, i) => PALETTE[i % PALETTE.length] + 'cc'),
+          borderColor:     this.monitoreoData.tipoLabels.map((_, i) => PALETTE[i % PALETTE.length]),
+          borderWidth: 2,
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, padding: 14, font: { size: 11 } },
+          },
+          tooltip: { enabled: true },
+          datalabels: {
+            color: '#fff',
+            font:  { weight: 'bold', size: 13 },
+            formatter: v => v > 0 ? v : '',
+          },
+        },
+      },
+    });
+  },
+
   initCharts() {
 
     // Destruir instancias anteriores
@@ -157,5 +208,6 @@ const dashboardMixin = {
 
     // Monitoreo: si ya hay datos, redibujar
     this.initMonitoreoCharts();
+    this.initTipoChart();
   },
 };

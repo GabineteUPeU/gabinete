@@ -494,6 +494,17 @@
 
             </div>
           </div>
+
+          <!-- Gráfico circular: Tipo de monitoreo y acompañamiento -->
+          <div x-show="monitoreoData?.tipoLabels?.length > 0" class="mt-5">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+              <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Tipo de monitoreo y acompañamiento</h4>
+              <div style="position:relative;height:280px">
+                <canvas id="chartTipoMonitoreo"></canvas>
+              </div>
+            </div>
+          </div>
+
         </div><!-- fin Monitoreo -->
 
       </div>
