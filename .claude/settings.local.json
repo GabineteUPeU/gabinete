@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:sites.google.com)",
       "WebSearch",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:docs.google.com)",
+      "WebFetch(domain:doc-0c-2k-sheets.googleusercontent.com)"
     ]
   }
 }

@@ -387,7 +387,7 @@
 
       <!-- ===== VISTA: DASHBOARD ===== -->
       <div x-show="vistaActiva==='dashboard'" class="p-5 md:p-7 page-enter"
-           x-effect="if(vistaActiva==='dashboard') $nextTick(() => initCharts())">
+           x-effect="if(vistaActiva==='dashboard') $nextTick(() => { initCharts(); fetchMonitoreoCSV(); })">
 
         <div class="mb-6">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
@@ -463,6 +463,73 @@
             </p>
           </div>
         </div>
+
+        <!-- ── Sección: Monitoreo Docente ── -->
+        <div class="mt-7 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="text-base font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <span class="text-lg">👁️</span> Monitoreo Docente
+              </h3>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Datos desde Google Sheets · pestaña Data</p>
+            </div>
+            <button @click="monitoreoData=null; fetchMonitoreoCSV()"
+              :disabled="_monitoreoLoading"
+              class="flex items-center gap-1.5 text-xs font-semibold text-upeu-blue dark:text-blue-400 hover:underline disabled:opacity-40 transition-opacity">
+              <svg :class="_monitoreoLoading ? 'animate-spin' : ''" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.635 19A9 9 0 104.582 9H4"/>
+              </svg>
+              <span x-text="_monitoreoLoading ? 'Cargando…' : 'Actualizar'"></span>
+            </button>
+          </div>
+
+          <!-- Estado: cargando -->
+          <div x-show="_monitoreoLoading"
+            class="flex items-center justify-center gap-3 py-12 text-sm text-gray-400 dark:text-gray-500">
+            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            Cargando datos desde Google Sheets…
+          </div>
+
+          <!-- Estado: error -->
+          <div x-show="monitoreoData && monitoreoData.error && !_monitoreoLoading"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-5 text-center text-sm text-red-500 dark:text-red-400">
+            No se pudo cargar los datos. Verifica que el Google Sheets esté publicado públicamente.
+          </div>
+
+          <!-- Estado: sin datos aún -->
+          <div x-show="!monitoreoData && !_monitoreoLoading"
+            class="bg-slate-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center text-sm text-gray-400 dark:text-gray-500">
+            <span class="text-3xl block mb-2">📊</span>
+            Presiona <strong>Actualizar</strong> o navega al dashboard para cargar los datos.
+          </div>
+
+          <!-- Datos cargados -->
+          <div x-show="monitoreoData && !monitoreoData.error && !_monitoreoLoading">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+              <!-- KPI: total monitoreados -->
+              <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-3xl mb-4">👩‍🏫</div>
+                <p class="text-5xl font-bold text-emerald-600 dark:text-emerald-400" x-text="monitoreoData?.total ?? 0"></p>
+                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-2">Total docentes<br>monitoreados</p>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Registros en hoja Data</p>
+              </div>
+
+              <!-- Gráfico: por monitor -->
+              <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Monitoreos por docente encargado</h4>
+                <div :style="`position:relative;height:${Math.max(200, (monitoreoData?.monitors?.length || 1) * 48)}px`">
+                  <canvas id="chartMonitores"></canvas>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div><!-- fin Monitoreo -->
+
       </div>
 
       <!-- ===== VISTA: INICIO ===== -->
