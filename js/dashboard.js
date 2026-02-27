@@ -2,8 +2,9 @@
 const dashboardMixin = {
 
   _charts: {},
-  monitoreoData: null,
-  _monitoreoLoading: false,
+  monitoreoData:      null,
+  _monitoreoLoading:  false,
+  semanaSeleccionada: '',
 
   dashboardData() {
     const secs     = this.seccionesActivas();
@@ -39,6 +40,32 @@ const dashboardMixin = {
       fechas,
       porFecha: fechas.map(f => porFechaMap[f]),
     };
+  },
+
+  // ── Helpers de fecha ───────────────────────────────────
+  _parseDate(str) {
+    if (!str) return null;
+    str = str.trim();
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      const d = new Date(str + 'T00:00:00'); return isNaN(d) ? null : d;
+    }
+    // DD/MM/YYYY o D/M/YYYY
+    const dmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dmy) {
+      const d = new Date(+dmy[3], +dmy[2] - 1, +dmy[1]); return isNaN(d) ? null : d;
+    }
+    // Intento genérico
+    const d = new Date(str); return isNaN(d) ? null : d;
+  },
+
+  _getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=Dom
+    const diff = day === 0 ? -6 : 1 - day; // lunes como inicio
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
   },
 
   // ── Monitoreo CSV ──────────────────────────────────────
@@ -78,6 +105,30 @@ const dashboardMixin = {
       // F–H (cols 5–7) → gráfico circular "Tipo de monitoreo"
       const tipoCols    = allCols.slice(4, 7);
 
+      // ── Columna I (índice 8): I1=título, I2:I1000=fechas ──
+      const semanaTitle = (row0[8] || '').trim();
+      const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const weekMap = {};
+      rows.slice(1, 1000).forEach(r => {
+        const val = (r[8] || '').trim();
+        if (!val) return;
+        const date = this._parseDate(val);
+        if (!date) return;
+        const ws  = this._getWeekStart(date);
+        const key = ws.toISOString().slice(0, 10);
+        weekMap[key] = (weekMap[key] || 0) + 1;
+      });
+
+      const semanaWeeks = Object.keys(weekMap).sort().map(k => {
+        const start = new Date(k + 'T00:00:00');
+        const end   = new Date(start); end.setDate(end.getDate() + 6);
+        return {
+          key:   k,
+          label: `${start.getDate()} ${MES[start.getMonth()]} – ${end.getDate()} ${MES[end.getMonth()]} ${end.getFullYear()}`,
+          count: weekMap[k],
+        };
+      });
+
       this.monitoreoData = {
         kpiTitle,
         kpiValue,
@@ -85,11 +136,19 @@ const dashboardMixin = {
         counts:     monitorCols.map(c => c.val),
         tipoLabels: tipoCols.map(c => c.name),
         tipoCounts: tipoCols.map(c => c.val),
+        semanaTitle,
+        semanaWeeks,
       };
+
+      // Auto-seleccionar la semana más reciente
+      if (semanaWeeks.length > 0) {
+        this.semanaSeleccionada = semanaWeeks[semanaWeeks.length - 1].key;
+      }
 
       console.log('[Monitoreo] KPI:', kpiTitle, kpiValue,
         '| monitores:', this.monitoreoData.monitors,
-        '| tipo:', this.monitoreoData.tipoLabels, this.monitoreoData.tipoCounts);
+        '| tipo:', this.monitoreoData.tipoLabels,
+        '| semanas:', semanaWeeks.length);
 
       setTimeout(() => { this.initMonitoreoCharts(); this.initTipoChart(); }, 60);
     } catch (e) {
