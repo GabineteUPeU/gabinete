@@ -108,33 +108,49 @@ const dashboardMixin = {
     if (!el) return;
     this._charts.monitores = new Chart(el, {
       type: 'bar',
+      plugins: [ChartDataLabels],
       data: {
         labels: this.monitoreoData.monitors,
         datasets: [{
           label:           'Docentes monitoreados',
           data:            this.monitoreoData.counts,
-          backgroundColor: this.monitoreoData.monitors.map((_, i) => PALETTE[i % PALETTE.length] + '40'),
+          backgroundColor: this.monitoreoData.monitors.map((_, i) => PALETTE[i % PALETTE.length] + '50'),
           borderColor:     this.monitoreoData.monitors.map((_, i) => PALETTE[i % PALETTE.length]),
           borderWidth: 2,
-          borderRadius: 6,
+          borderRadius: 8,
         }],
       },
       options: {
-        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.parsed.x} monitoreado${ctx.parsed.x !== 1 ? 's' : ''}`,
-            },
+          tooltip: { enabled: false },
+          datalabels: {
+            anchor: 'end',
+            align:  'end',
+            color:  this.monitoreoData.monitors.map((_, i) => PALETTE[i % PALETTE.length]),
+            font:   { weight: 'bold', size: 14 },
+            formatter: v => v,
           },
         },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1, precision: 0 } },
-          y: { grid: { display: false },   ticks: { color: textColor, font: { size: 11 } } },
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: textColor,
+              font:  { size: 11 },
+              maxRotation: 30,
+              minRotation: 0,
+            },
+          },
+          y: {
+            grid:  { color: gridColor },
+            ticks: { color: textColor, stepSize: 1, precision: 0 },
+            beginAtZero: true,
+          },
         },
+        layout: { padding: { top: 24 } },
       },
     });
   },
