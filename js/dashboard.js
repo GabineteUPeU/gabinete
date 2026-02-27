@@ -73,10 +73,10 @@ const dashboardMixin = {
         if (name) allCols.push({ name, val });
       }
 
-      // B–E (primeras 4 columnas con nombre) → gráfico de barras "Monitoreo por encargados"
+      // B–E (cols 1–4) → gráfico de barras "Monitoreo por encargados"
       const monitorCols = allCols.slice(0, 4);
-      // F–H (siguientes columnas con nombre) → gráfico circular "Tipo de monitoreo"
-      const tipoCols    = allCols.slice(4);
+      // F–H (cols 5–7) → gráfico circular "Tipo de monitoreo"
+      const tipoCols    = allCols.slice(4, 7);
 
       this.monitoreoData = {
         kpiTitle,
