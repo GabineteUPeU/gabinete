@@ -57,31 +57,24 @@ const dashboardMixin = {
         dynamicTyping:  false, // todo como string, evita que fechas/números se conviertan
       });
 
-      // A1 (fila 0, col 0) → título del KPI
-      // A2 (fila 1, col 0) → número del KPI
+      // Fila 1 (índice 0): A1=título KPI, B1:E1=nombres de monitores
       const kpiTitle = (rows[0]?.[0] || '').trim();
-      const kpiValue = (rows[1]?.[0] || '').trim();
-
-      // Fila 2 (índice 1): nombres de monitores en B2, C2, D2, E2… (cols 1, 2, 3, 4…)
-      const nameRow = rows[1] || [];
+      const nameRow  = rows[0] || [];
       const monitors = [];
       for (let col = 1; col < nameRow.length; col++) {
         const name = (nameRow[col] || '').trim();
         if (name) monitors.push({ name, col });
       }
 
-      // Fila 3 en adelante (índice 2+): contar celdas no vacías por columna
-      const dataRows = rows.slice(2);
-      const result = monitors.map(m => ({
-        name:  m.name,
-        count: dataRows.filter(r => (r[m.col] || '').trim() !== '').length,
-      }));
+      // Fila 2 (índice 1): A2=número KPI, B2:E2=números de cada barra
+      const kpiValue = (rows[1]?.[0] || '').trim();
+      const counts   = monitors.map(m => Number((rows[1]?.[m.col] || '0').trim()) || 0);
 
       this.monitoreoData = {
         kpiTitle,
         kpiValue,
-        monitors: result.map(m => m.name),
-        counts:   result.map(m => m.count),
+        monitors: monitors.map(m => m.name),
+        counts,
       };
 
       console.log('[Monitoreo] A1:', kpiTitle, '| A2:', kpiValue,
