@@ -41,21 +41,7 @@ const dashboardMixin = {
     };
   },
 
-  // ── CSV Helpers ────────────────────────────────────────
-  _parseCSV(text) {
-    const rows = [];
-    for (const line of text.trim().split('\n')) {
-      const row = []; let cur = '', inQ = false;
-      for (const ch of line) {
-        if (ch === '"') { inQ = !inQ; }
-        else if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
-        else { cur += ch; }
-      }
-      row.push(cur.trim()); rows.push(row);
-    }
-    return rows;
-  },
-
+  // ── Monitoreo CSV ──────────────────────────────────────
   async fetchMonitoreoCSV() {
     if (this._monitoreoLoading || (this.monitoreoData && !this.monitoreoData.error)) return;
     this._monitoreoLoading = true;
@@ -63,33 +49,61 @@ const dashboardMixin = {
     try {
       const res = await fetch(CSV_URL);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const rows = this._parseCSV(await res.text());
+      const text = await res.text();
 
-      // Fila 2 (índice 1): nombres de monitores en columnas B, C, D, E… (índices 1, 2, 3, 4…)
-      const nameRow = rows[1] || [];
+      // PapaParse: maneja comillas, encoding, saltos de línea, campos vacíos
+      const { data: rows } = Papa.parse(text, {
+        skipEmptyLines: false,
+        dynamicTyping:  false, // todo como string, evita que fechas/números se conviertan
+      });
+
+      // Detectar la fila que tiene los nombres de monitores:
+      // buscamos la primera fila (entre las 5 primeras) donde columnas B,C,D+
+      // tienen texto con espacios (nombre completo) y no son fechas/números
+      let nameRowIdx = 1;
+      for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        const r = rows[i];
+        let matches = 0;
+        for (let col = 1; col < r.length; col++) {
+          const v = (r[col] || '').trim();
+          if (v.length > 3 && v.includes(' ') && isNaN(v) && !/^\d{1,2}[\/\-]\d/.test(v)) matches++;
+        }
+        if (matches >= 2) { nameRowIdx = i; break; }
+      }
+
+      // Extraer nombres desde la fila detectada, columnas B en adelante (índice 1+)
+      const nameRow = rows[nameRowIdx] || [];
       const monitors = [];
       for (let col = 1; col < nameRow.length; col++) {
         const name = (nameRow[col] || '').trim();
-        if (name) monitors.push({ name, col });
+        if (name && name.includes(' ') && isNaN(name)) {
+          monitors.push({ name, col });
+        }
       }
 
-      // Filas desde la 3 (índice 2): contar celdas no vacías por columna
-      const dataRows = rows.slice(2);
-      const counts = {};
-      monitors.forEach(m => {
-        counts[m.name] = dataRows.filter(r => (r[m.col] || '').trim() !== '').length;
-      });
+      // Contar celdas no vacías por columna desde la fila posterior a los nombres
+      const dataRows = rows.slice(nameRowIdx + 1);
+      const result = monitors.map(m => ({
+        name:  m.name,
+        count: dataRows.filter(r => (r[m.col] || '').trim() !== '').length,
+      }));
 
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      const total = result.reduce((s, m) => s + m.count, 0);
 
       this.monitoreoData = {
         total,
-        monitors: sorted.map(([n]) => n),
-        counts:   sorted.map(([, c]) => c),
+        monitors: result.map(m => m.name),
+        counts:   result.map(m => m.count),
       };
+
+      console.log('[Monitoreo] filaIdx:', nameRowIdx,
+        '| monitores:', this.monitoreoData.monitors,
+        '| conteos:', this.monitoreoData.counts,
+        '| total:', total);
+
       setTimeout(() => this.initMonitoreoCharts(), 60);
     } catch (e) {
+      console.error('[Monitoreo] Error:', e);
       this.monitoreoData = { error: true, msg: e.message };
     } finally {
       this._monitoreoLoading = false;
